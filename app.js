@@ -239,12 +239,12 @@ function doesTextFit(container, textBlock) {
 }
 
 function getQuestionBaseSize(fontScale = DEFAULT_SETTINGS.fontScale) {
-  return 1.02 * (fontScale / 100);
+  return 0.92 * (fontScale / 100);
 }
 
 function applyQuestionTextSize(textBlock, size) {
   textBlock.style.fontSize = `${size.toFixed(3)}rem`;
-  textBlock.style.lineHeight = size > 1.24 ? "1.3" : size > 1.04 ? "1.34" : "1.26";
+  textBlock.style.lineHeight = size > 1.12 ? "1.24" : size > 0.92 ? "1.28" : "1.22";
 }
 
 function fitQuestionText(container, textBlock, fontScale = DEFAULT_SETTINGS.fontScale) {
@@ -252,7 +252,8 @@ function fitQuestionText(container, textBlock, fontScale = DEFAULT_SETTINGS.font
     return;
   }
 
-  const minSize = 0.62;
+  const minSize = 0.72;
+  const preferredFloor = 0.92;
   const targetSize = Math.max(minSize, getQuestionBaseSize(fontScale));
   let best = minSize;
 
@@ -261,18 +262,39 @@ function fitQuestionText(container, textBlock, fontScale = DEFAULT_SETTINGS.font
   if (doesTextFit(container, textBlock)) {
     best = targetSize;
   } else {
-    let low = minSize;
-    let high = targetSize;
+    const preferredSize = Math.min(targetSize, preferredFloor);
+    applyQuestionTextSize(textBlock, preferredSize);
 
-    for (let attempt = 0; attempt < 14; attempt += 1) {
-      const mid = (low + high) / 2;
-      applyQuestionTextSize(textBlock, mid);
+    if (doesTextFit(container, textBlock)) {
+      let low = preferredSize;
+      let high = targetSize;
+      best = preferredSize;
 
-      if (doesTextFit(container, textBlock)) {
-        best = mid;
-        low = mid;
-      } else {
-        high = mid;
+      for (let attempt = 0; attempt < 14; attempt += 1) {
+        const mid = (low + high) / 2;
+        applyQuestionTextSize(textBlock, mid);
+
+        if (doesTextFit(container, textBlock)) {
+          best = mid;
+          low = mid;
+        } else {
+          high = mid;
+        }
+      }
+    } else {
+      let low = minSize;
+      let high = preferredSize;
+
+      for (let attempt = 0; attempt < 14; attempt += 1) {
+        const mid = (low + high) / 2;
+        applyQuestionTextSize(textBlock, mid);
+
+        if (doesTextFit(container, textBlock)) {
+          best = mid;
+          low = mid;
+        } else {
+          high = mid;
+        }
       }
     }
   }
