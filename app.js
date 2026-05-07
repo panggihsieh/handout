@@ -239,12 +239,12 @@ function doesTextFit(container, textBlock) {
 }
 
 function getQuestionBaseSize(fontScale = DEFAULT_SETTINGS.fontScale) {
-  return 0.92 * (fontScale / 100);
+  return 1.02 * (fontScale / 100);
 }
 
 function applyQuestionTextSize(textBlock, size) {
   textBlock.style.fontSize = `${size.toFixed(3)}rem`;
-  textBlock.style.lineHeight = size > 1.18 ? "1.34" : size > 0.98 ? "1.38" : "1.28";
+  textBlock.style.lineHeight = size > 1.24 ? "1.3" : size > 1.04 ? "1.34" : "1.26";
 }
 
 function fitQuestionText(container, textBlock, fontScale = DEFAULT_SETTINGS.fontScale) {
