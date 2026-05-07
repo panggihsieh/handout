@@ -9,7 +9,7 @@ const DEFAULT_SETTINGS = {
   pageCount: 1,
   columnCount: 2,
   rowCount: 4,
-  fontScale: 110,
+  fontScale: 120,
   guideMode: "none",
   showSignature: true,
 };

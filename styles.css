@@ -737,6 +737,10 @@ h1 {
     padding-top: 14px;
   }
 
+  .question-pane.has-question {
+    padding-top: 0;
+  }
+
   .question-pane.has-question .cell-content {
     margin-top: 0;
     padding-top: 0;
