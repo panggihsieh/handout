@@ -733,22 +733,25 @@ h1 {
     display: none;
   }
 
-  .question-pane {
-    padding-top: 14px;
-  }
-
   .question-pane.has-question {
-    padding-top: 0;
+    padding-top: 0 !important;
   }
 
   .question-pane.has-question .cell-content {
-    margin-top: 0;
-    padding-top: 0;
+    display: flex;
     align-items: flex-start;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
   }
 
   .question-pane.has-question .problem-text {
-    padding-top: 0;
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+    align-self: flex-start;
+  }
+
+  .question-pane.has-question .problem-text > :first-child {
+    margin-top: 0 !important;
   }
 
   .cell-layout {

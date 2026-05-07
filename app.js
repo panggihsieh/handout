@@ -242,24 +242,42 @@ function getQuestionBaseSize(fontScale = DEFAULT_SETTINGS.fontScale) {
   return 0.92 * (fontScale / 100);
 }
 
+function applyQuestionTextSize(textBlock, size) {
+  textBlock.style.fontSize = `${size.toFixed(3)}rem`;
+  textBlock.style.lineHeight = size > 1.18 ? "1.34" : size > 0.98 ? "1.38" : "1.28";
+}
+
 function fitQuestionText(container, textBlock, fontScale = DEFAULT_SETTINGS.fontScale) {
   if (!container.clientWidth || !container.clientHeight) {
     return;
   }
 
-  const shrinkStep = 0.08;
   const minSize = 0.62;
-  let best = getQuestionBaseSize(fontScale);
+  const targetSize = Math.max(minSize, getQuestionBaseSize(fontScale));
+  let best = minSize;
 
-  textBlock.style.fontSize = `${best}rem`;
-  textBlock.style.lineHeight = best > 1 ? "1.4" : "1.32";
+  applyQuestionTextSize(textBlock, targetSize);
 
-  while (!doesTextFit(container, textBlock) && best > minSize) {
-    best = Math.max(minSize, best - shrinkStep);
-    textBlock.style.fontSize = `${best}rem`;
-    textBlock.style.lineHeight = best > 0.92 ? "1.38" : "1.28";
+  if (doesTextFit(container, textBlock)) {
+    best = targetSize;
+  } else {
+    let low = minSize;
+    let high = targetSize;
+
+    for (let attempt = 0; attempt < 14; attempt += 1) {
+      const mid = (low + high) / 2;
+      applyQuestionTextSize(textBlock, mid);
+
+      if (doesTextFit(container, textBlock)) {
+        best = mid;
+        low = mid;
+      } else {
+        high = mid;
+      }
+    }
   }
 
+  applyQuestionTextSize(textBlock, best);
   textBlock.classList.toggle("is-compact", best <= 0.84);
 }
 
@@ -294,6 +312,7 @@ function renderCellContent(container, pane, item) {
 
 function refreshQuestionTextSizing() {
   const { fontScale } = collectSettings();
+  pagesRoot.style.setProperty("--question-font-scale", String(fontScale));
 
   cellBindings.forEach(({ content, pane }, cellIndex) => {
     const item = cellItems.get(cellIndex);
@@ -466,6 +485,7 @@ function renderPages() {
 
   pagesRoot.replaceChildren();
   cellBindings.clear();
+  pagesRoot.style.setProperty("--question-font-scale", String(settings.fontScale));
   updateGuideMode(settings.guideMode);
   updateSignatureVisibility(settings.showSignature);
   saveSettings(settings);
