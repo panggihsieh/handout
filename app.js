@@ -9,13 +9,14 @@ const DEFAULT_SETTINGS = {
   pageCount: 1,
   columnCount: 2,
   rowCount: 4,
+  fontScale: 110,
   guideMode: "none",
   showSignature: true,
 };
 
-const uploadedImages = new Map();
+const cellItems = new Map();
 const cellBindings = new Map();
-let activePasteImageIndex = null;
+let activeCellIndex = null;
 
 const titleInput = document.querySelector("#titleInput");
 const classInput = document.querySelector("#classInput");
@@ -24,6 +25,7 @@ const dateInput = document.querySelector("#dateInput");
 const startNumberInput = document.querySelector("#startNumberInput");
 const pageCountInput = document.querySelector("#pageCountInput");
 const rowCountInput = document.querySelector("#rowCountInput");
+const fontScaleInput = document.querySelector("#fontScaleInput");
 const guideSelect = document.querySelector("#guideSelect");
 const signatureToggle = document.querySelector("#signatureToggle");
 const resetButton = document.querySelector("#resetButton");
@@ -92,6 +94,7 @@ function applySettings(settings) {
   startNumberInput.value = settings.startNumber;
   pageCountInput.value = settings.pageCount;
   rowCountInput.value = settings.rowCount;
+  fontScaleInput.value = settings.fontScale ?? DEFAULT_SETTINGS.fontScale;
   guideSelect.value = settings.guideMode;
   updateSignatureVisibility(settings.showSignature);
 }
@@ -106,6 +109,7 @@ function collectSettings() {
     pageCount: clampNumber(pageCountInput.value, 1, 50, DEFAULT_SETTINGS.pageCount),
     columnCount: 2,
     rowCount: clampNumber(rowCountInput.value, 1, 12, DEFAULT_SETTINGS.rowCount),
+    fontScale: clampNumber(fontScaleInput.value, 70, 180, DEFAULT_SETTINGS.fontScale),
     guideMode: guideSelect.value,
     showSignature: getSignatureVisible(),
   };
@@ -129,13 +133,8 @@ function updateSignatureVisibility(showSignature) {
   signatureToggle.setAttribute("aria-pressed", String(showSignature));
 }
 
-function readBlobAsDataUrl(blob) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(blob);
-  });
+function getPlainTextFromClipboardData(clipboardData) {
+  return (clipboardData?.getData("text/plain") ?? "").trim();
 }
 
 function getImageFileFromClipboardData(clipboardData) {
@@ -148,6 +147,23 @@ function getImageFileFromClipboardData(clipboardData) {
   }
 
   return null;
+}
+
+function readBlobAsDataUrl(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function readClipboardText() {
+  if (!navigator.clipboard?.readText) {
+    return "";
+  }
+
+  return (await navigator.clipboard.readText()).trim();
 }
 
 async function readClipboardImage() {
@@ -168,128 +184,269 @@ async function readClipboardImage() {
   return null;
 }
 
-function renderCellImage(container, pane, imageUrl) {
-  container.replaceChildren();
-  container.classList.remove("is-empty");
-  pane.classList.toggle("has-image", Boolean(imageUrl));
+function escapeHtml(value) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
 
-  if (!imageUrl) {
-    container.classList.add("is-empty");
+function renderMathMarkdown(container, sourceText) {
+  const markdownSource = sourceText.trim();
+
+  if (!markdownSource) {
+    container.innerHTML = "";
     return;
   }
 
-  const image = document.createElement("img");
-  image.className = "problem-image";
-  image.alt = "幾何題目圖片";
-  image.src = imageUrl;
-  container.appendChild(image);
-}
-
-function updatePasteTargetState() {
-  cellBindings.forEach(({ pane, pasteButton }, imageIndex) => {
-    const isActive = imageIndex === activePasteImageIndex;
-    pane.classList.toggle("is-paste-target", isActive);
-    pasteButton.classList.toggle("is-active", isActive);
-  });
-}
-
-function setActivePasteTarget(imageIndex) {
-  activePasteImageIndex = imageIndex;
-  updatePasteTargetState();
-}
-
-async function applyImageToCell(imageIndex, blobOrFile) {
-  const imageUrl = await readBlobAsDataUrl(blobOrFile);
-  uploadedImages.set(imageIndex, imageUrl);
-
-  const binding = cellBindings.get(imageIndex);
-
-  if (!binding) {
-    return;
-  }
-
-  renderCellImage(binding.content, binding.pane, imageUrl);
-  binding.clearButton.hidden = false;
-}
-
-function bindCellUpload(cell, imageIndex) {
-  const uploadInputs = cell.querySelectorAll(".cell-upload-input");
-  const pasteButton = cell.querySelector(".cell-paste-button");
-  const clearButton = cell.querySelector(".cell-clear-button");
-  const content = cell.querySelector(".cell-content");
-  const pane = cell.querySelector(".question-pane");
-
-  pane.tabIndex = 0;
-  pane.setAttribute("title", "點一下這格後可直接按 Ctrl+V 貼上截圖");
-
-  cellBindings.set(imageIndex, {
-    pane,
-    content,
-    clearButton,
-    pasteButton,
-  });
-
-  renderCellImage(content, pane, uploadedImages.get(imageIndex) ?? "");
-  clearButton.hidden = !uploadedImages.has(imageIndex);
-  updatePasteTargetState();
-
-  uploadInputs.forEach((uploadInput) => {
-    uploadInput.addEventListener("change", async () => {
-      const [file] = uploadInput.files ?? [];
-
-      if (!file) {
-        return;
-      }
-
-      try {
-        setActivePasteTarget(imageIndex);
-        await applyImageToCell(imageIndex, file);
-      } finally {
-        uploadInput.value = "";
-      }
+  if (window.marked?.setOptions) {
+    window.marked.setOptions({
+      breaks: true,
+      gfm: true,
     });
-  });
+  }
 
-  const activatePasteTarget = () => {
-    setActivePasteTarget(imageIndex);
+  const html = window.marked?.parse
+    ? window.marked.parse(markdownSource)
+    : `<p>${escapeHtml(markdownSource)}</p>`;
+
+  container.innerHTML = html;
+
+  if (window.renderMathInElement) {
+    window.renderMathInElement(container, {
+      delimiters: [
+        { left: "$$", right: "$$", display: true },
+        { left: "$", right: "$", display: false },
+        { left: "\\(", right: "\\)", display: false },
+        { left: "\\[", right: "\\]", display: true },
+      ],
+      throwOnError: false,
+      strict: "ignore",
+    });
+  }
+}
+
+function doesTextFit(container, textBlock) {
+  const heightSlack = 2;
+  const widthSlack = 2;
+
+  return (
+    textBlock.scrollHeight <= container.clientHeight - heightSlack &&
+    textBlock.scrollWidth <= container.clientWidth - widthSlack
+  );
+}
+
+function getQuestionBaseSize(fontScale = DEFAULT_SETTINGS.fontScale) {
+  return 0.92 * (fontScale / 100);
+}
+
+function fitQuestionText(container, textBlock, fontScale = DEFAULT_SETTINGS.fontScale) {
+  if (!container.clientWidth || !container.clientHeight) {
+    return;
+  }
+
+  const shrinkStep = 0.08;
+  const minSize = 0.62;
+  let best = getQuestionBaseSize(fontScale);
+
+  textBlock.style.fontSize = `${best}rem`;
+  textBlock.style.lineHeight = best > 1 ? "1.4" : "1.32";
+
+  while (!doesTextFit(container, textBlock) && best > minSize) {
+    best = Math.max(minSize, best - shrinkStep);
+    textBlock.style.fontSize = `${best}rem`;
+    textBlock.style.lineHeight = best > 0.92 ? "1.38" : "1.28";
+  }
+
+  textBlock.classList.toggle("is-compact", best <= 0.84);
+}
+
+function renderCellContent(container, pane, item) {
+  container.replaceChildren();
+
+  const hasContent = Boolean(item?.value);
+  container.classList.toggle("is-empty", !hasContent);
+  pane.classList.toggle("has-question", Boolean(item && item.type === "text"));
+  pane.classList.toggle("has-image", Boolean(item && item.type === "image"));
+
+  if (!item?.value) {
+    return;
+  }
+
+  if (item.type === "image") {
+    const image = document.createElement("img");
+    image.className = "problem-image";
+    image.alt = "題目圖片";
+    image.src = item.value;
+    container.appendChild(image);
+    return;
+  }
+
+  const textBlock = document.createElement("div");
+  textBlock.className = "problem-text";
+  renderMathMarkdown(textBlock, item.value);
+  container.appendChild(textBlock);
+  const currentSettings = collectSettings();
+  requestAnimationFrame(() => fitQuestionText(container, textBlock, currentSettings.fontScale));
+}
+
+function refreshQuestionTextSizing() {
+  const { fontScale } = collectSettings();
+
+  cellBindings.forEach(({ content, pane }, cellIndex) => {
+    const item = cellItems.get(cellIndex);
+
+    if (!item || item.type !== "text") {
+      return;
+    }
+
+    const textBlock = content.querySelector(".problem-text");
+
+    if (!textBlock || !pane.classList.contains("has-question")) {
+      return;
+    }
+
+    fitQuestionText(content, textBlock, fontScale);
+  });
+}
+
+function updateActiveState() {
+  cellBindings.forEach(({ pane, imagePasteButton, textPasteButton }, cellIndex) => {
+    const isActive = cellIndex === activeCellIndex;
+    pane.classList.toggle("is-paste-target", isActive);
+    imagePasteButton.classList.toggle("is-active", isActive);
+    textPasteButton.classList.toggle("is-active", isActive);
+  });
+}
+
+function setActiveCell(cellIndex) {
+  activeCellIndex = cellIndex;
+  updateActiveState();
+}
+
+function setCellItem(cellIndex, item) {
+  const normalizedValue = item?.value?.trim() ?? "";
+
+  if (!normalizedValue) {
+    return false;
+  }
+
+  const normalizedItem = {
+    type: item.type,
+    value: normalizedValue,
   };
 
-  cell.addEventListener("click", activatePasteTarget);
-  pane.addEventListener("focus", activatePasteTarget);
+  cellItems.set(cellIndex, normalizedItem);
+
+  const binding = cellBindings.get(cellIndex);
+  if (binding) {
+    renderCellContent(binding.content, binding.pane, normalizedItem);
+    binding.clearButton.hidden = false;
+  }
+
+  return true;
+}
+
+async function applyImageToCell(cellIndex, fileOrBlob) {
+  const imageUrl = await readBlobAsDataUrl(fileOrBlob);
+  return setCellItem(cellIndex, { type: "image", value: imageUrl });
+}
+
+function applyTextToCell(cellIndex, text) {
+  return setCellItem(cellIndex, { type: "text", value: text });
+}
+
+function bindCell(cell, cellIndex) {
+  const pane = cell.querySelector(".question-pane");
+  const content = cell.querySelector(".cell-content");
+  const imagePasteButton = cell.querySelector(".cell-image-paste-button");
+  const textPasteButton = cell.querySelector(".cell-text-paste-button");
+  const clearButton = cell.querySelector(".cell-clear-button");
+
+  pane.tabIndex = 0;
+  pane.setAttribute("title", "點選這一格後可按 Ctrl+V 貼上題圖或題目");
+
+  cellBindings.set(cellIndex, {
+    pane,
+    content,
+    imagePasteButton,
+    textPasteButton,
+    clearButton,
+  });
+
+  renderCellContent(content, pane, cellItems.get(cellIndex));
+  clearButton.hidden = !cellItems.has(cellIndex);
+  updateActiveState();
+
+  const activate = () => {
+    setActiveCell(cellIndex);
+  };
+
+  cell.addEventListener("click", activate);
+  pane.addEventListener("focus", activate);
 
   pane.addEventListener("paste", async (event) => {
     const imageFile = getImageFileFromClipboardData(event.clipboardData);
+    const text = getPlainTextFromClipboardData(event.clipboardData);
 
-    if (!imageFile) {
+    if (!imageFile && !text) {
       return;
     }
 
     event.preventDefault();
-    setActivePasteTarget(imageIndex);
-    await applyImageToCell(imageIndex, imageFile);
+    setActiveCell(cellIndex);
+
+    if (imageFile) {
+      await applyImageToCell(cellIndex, imageFile);
+      return;
+    }
+
+    if (text) {
+      applyTextToCell(cellIndex, text);
+    }
   });
 
-  pasteButton.addEventListener("click", async () => {
-    setActivePasteTarget(imageIndex);
+  imagePasteButton.addEventListener("click", async () => {
+    setActiveCell(cellIndex);
 
     try {
       const imageBlob = await readClipboardImage();
 
       if (!imageBlob) {
-        window.alert("剪貼簿中沒有圖片，請先複製截圖後再貼上。");
+        window.alert("剪貼簿目前沒有圖片，請先複製題圖後再貼上。");
         return;
       }
 
-      await applyImageToCell(imageIndex, imageBlob);
+      await applyImageToCell(cellIndex, imageBlob);
     } catch (error) {
       console.error(error);
-      window.alert("目前瀏覽器沒有允許讀取剪貼簿圖片，請改用 Ctrl+V 貼上，或使用上傳題圖。");
+      window.alert("目前無法直接讀取剪貼簿圖片，請改用 Ctrl+V 貼上題圖。");
+    }
+  });
+
+  textPasteButton.addEventListener("click", async () => {
+    setActiveCell(cellIndex);
+
+    try {
+      const text = await readClipboardText();
+
+      if (!text) {
+        window.alert("剪貼簿目前沒有文字題目，請先複製題目文字後再貼上。");
+        return;
+      }
+
+      applyTextToCell(cellIndex, text);
+    } catch (error) {
+      console.error(error);
+      window.alert("目前無法直接讀取剪貼簿文字，請改用 Ctrl+V 貼上題目。");
     }
   });
 
   clearButton.addEventListener("click", () => {
-    uploadedImages.delete(imageIndex);
-    renderCellImage(content, pane, "");
+    cellItems.delete(cellIndex);
+    renderCellContent(content, pane, null);
     clearButton.hidden = true;
   });
 }
@@ -303,8 +460,8 @@ function renderPages() {
   const totalCells = settings.pageCount * cellsPerPage;
   const layoutLabel = `單欄 / 每頁 ${cellsPerPage} 題`;
 
-  if (activePasteImageIndex !== null && activePasteImageIndex >= totalCells) {
-    activePasteImageIndex = null;
+  if (activeCellIndex !== null && activeCellIndex >= totalCells) {
+    activeCellIndex = null;
   }
 
   pagesRoot.replaceChildren();
@@ -338,14 +495,13 @@ function renderPages() {
     }
 
     for (let cellIndex = 0; cellIndex < cellsPerPage; cellIndex += 1) {
-      const imageIndex = pageIndex * cellsPerPage + cellIndex;
+      const itemIndex = pageIndex * cellsPerPage + cellIndex;
       const cellFragment = cellTemplate.content.cloneNode(true);
-      const cell = cellFragment.querySelector(".cell");
+      const cellElement = cellFragment.querySelector(".cell");
       const cellNumber = cellFragment.querySelector(".cell-number");
-      const number = settings.startNumber + imageIndex;
 
-      cellNumber.textContent = number;
-      bindCellUpload(cell, imageIndex);
+      cellNumber.textContent = settings.startNumber + itemIndex;
+      bindCell(cellElement, itemIndex);
       grid.appendChild(cellFragment);
     }
 
@@ -360,6 +516,18 @@ function renderPages() {
     element.addEventListener("change", renderPages);
   });
 
+fontScaleInput.addEventListener("input", () => {
+  saveSettings(collectSettings());
+  renderPages();
+  requestAnimationFrame(refreshQuestionTextSizing);
+});
+
+fontScaleInput.addEventListener("change", () => {
+  saveSettings(collectSettings());
+  renderPages();
+  requestAnimationFrame(refreshQuestionTextSizing);
+});
+
 signatureToggle.addEventListener("click", () => {
   updateSignatureVisibility(!getSignatureVisible());
   renderPages();
@@ -367,8 +535,8 @@ signatureToggle.addEventListener("click", () => {
 
 resetButton.addEventListener("click", () => {
   localStorage.removeItem(STORAGE_KEY);
-  uploadedImages.clear();
-  activePasteImageIndex = null;
+  cellItems.clear();
+  activeCellIndex = null;
   applySettings({ ...DEFAULT_SETTINGS });
   renderPages();
 });
@@ -378,18 +546,27 @@ printButton.addEventListener("click", () => {
 });
 
 document.addEventListener("paste", async (event) => {
-  if (activePasteImageIndex === null) {
+  if (activeCellIndex === null) {
     return;
   }
 
   const imageFile = getImageFileFromClipboardData(event.clipboardData);
+  const text = getPlainTextFromClipboardData(event.clipboardData);
 
-  if (!imageFile) {
+  if (!imageFile && !text) {
     return;
   }
 
   event.preventDefault();
-  await applyImageToCell(activePasteImageIndex, imageFile);
+
+  if (imageFile) {
+    await applyImageToCell(activeCellIndex, imageFile);
+    return;
+  }
+
+  if (text) {
+    applyTextToCell(activeCellIndex, text);
+  }
 });
 
 applySettings(loadSettings());
