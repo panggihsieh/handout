@@ -230,15 +230,20 @@ h1 {
 .page-info {
   display: flex;
   flex-wrap: nowrap;
-  gap: 8px 16px;
+  gap: 6px 12px;
   color: var(--muted);
-  font-size: 1.09rem;
+  font-size: 0.72rem;
   line-height: 1.15;
   min-width: 0;
 }
 
 .page-info-item {
   white-space: nowrap;
+  font-size: inherit;
+}
+
+.page-info-item span {
+  font-size: inherit;
 }
 
 .page-signature {
