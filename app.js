@@ -371,6 +371,39 @@ async function applyImageToCell(cellIndex, fileOrBlob) {
 function applyTextToCell(cellIndex, text) {
   return setCellItem(cellIndex, { type: "text", value: text, fontScale: getCellFontScale(cellIndex) });
 }
+
+async function handlePasteForCell(cellIndex, event) {
+  const imageFile = getImageFileFromClipboardData(event.clipboardData);
+  const text = getPlainTextFromClipboardData(event.clipboardData);
+
+  if (!imageFile && !text) {
+    return false;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+
+  if (imageFile && activePasteMode !== "text") {
+    setActiveCell(cellIndex, null);
+    await applyImageToCell(cellIndex, imageFile);
+    return true;
+  }
+
+  if (text) {
+    setActiveCell(cellIndex, null);
+    applyTextToCell(cellIndex, text);
+    return true;
+  }
+
+  if (imageFile) {
+    setActiveCell(cellIndex, null);
+    await applyImageToCell(cellIndex, imageFile);
+    return true;
+  }
+
+  return false;
+}
+
 function bindCell(cell, cellIndex) {
   const pane = cell.querySelector(".question-pane");
   const content = cell.querySelector(".cell-content");
@@ -379,9 +412,15 @@ function bindCell(cell, cellIndex) {
   const fontDecreaseButton = cell.querySelector(".cell-font-decrease-button");
   const fontIncreaseButton = cell.querySelector(".cell-font-increase-button");
   const clearButton = cell.querySelector(".cell-clear-button");
+  const pasteInput = document.createElement("textarea");
 
   pane.tabIndex = 0;
   pane.setAttribute("title", "先點按鈕，再按 Ctrl+V 貼上圖片或文字");
+  pasteInput.className = "cell-paste-input";
+  pasteInput.setAttribute("aria-label", "貼上輸入框");
+  pasteInput.setAttribute("autocomplete", "off");
+  pasteInput.setAttribute("spellcheck", "false");
+  pane.appendChild(pasteInput);
 
   cellBindings.set(cellIndex, {
     pane,
@@ -391,6 +430,7 @@ function bindCell(cell, cellIndex) {
     fontDecreaseButton,
     fontIncreaseButton,
     clearButton,
+    pasteInput,
   });
 
   renderCellContent(content, pane, cellItems.get(cellIndex), cellIndex);
@@ -405,41 +445,24 @@ function bindCell(cell, cellIndex) {
   pane.addEventListener("focus", activate);
 
   pane.addEventListener("paste", async (event) => {
-    const imageFile = getImageFileFromClipboardData(event.clipboardData);
-    const text = getPlainTextFromClipboardData(event.clipboardData);
+    await handlePasteForCell(cellIndex, event);
+  });
 
-    if (!imageFile && !text) {
-      return;
-    }
-
-    event.preventDefault();
-
-    if (imageFile && activePasteMode !== "text") {
-      setActiveCell(cellIndex, null);
-      await applyImageToCell(cellIndex, imageFile);
-      return;
-    }
-
-    if (text) {
-      setActiveCell(cellIndex, null);
-      applyTextToCell(cellIndex, text);
-      return;
-    }
-
-    if (imageFile) {
-      setActiveCell(cellIndex, null);
-      await applyImageToCell(cellIndex, imageFile);
-    }
+  pasteInput.addEventListener("focus", activate);
+  pasteInput.addEventListener("paste", async (event) => {
+    pasteInput.value = "";
+    await handlePasteForCell(cellIndex, event);
+    pasteInput.value = "";
   });
 
   imagePasteButton.addEventListener("click", () => {
     setActiveCell(cellIndex, "image");
-    pane.focus();
+    pasteInput.focus();
   });
 
   textPasteButton.addEventListener("click", () => {
     setActiveCell(cellIndex, "text");
-    pane.focus();
+    pasteInput.focus();
   });
 
   fontDecreaseButton?.addEventListener("click", () => {
@@ -548,6 +571,10 @@ printButton.addEventListener("click", () => {
 });
 
 document.addEventListener("paste", async (event) => {
+  if (event.defaultPrevented) {
+    return;
+  }
+
   if (activeCellIndex === null) {
     return;
   }
