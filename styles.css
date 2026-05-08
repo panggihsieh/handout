@@ -230,9 +230,9 @@ h1 {
 .page-info {
   display: flex;
   flex-wrap: nowrap;
-  gap: 10px 22px;
+  gap: 8px 16px;
   color: var(--muted);
-  font-size: 1.64rem;
+  font-size: 1.09rem;
   line-height: 1.15;
   min-width: 0;
 }
