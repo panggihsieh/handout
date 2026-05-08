@@ -1,10 +1,16 @@
 const STORAGE_KEY = "rowcolpage.v3.settings";
 
+function getTodayLocalDateValue() {
+  const now = new Date();
+  const localNow = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+  return localNow.toISOString().slice(0, 10);
+}
+
 const DEFAULT_SETTINGS = {
   title: "大南六甲",
   className: "",
   studentName: "",
-  date: new Date().toISOString().slice(0, 10),
+  date: getTodayLocalDateValue(),
   startNumber: 1,
   pageCount: 1,
   columnCount: 2,
@@ -74,7 +80,7 @@ function loadSettings() {
       return { ...DEFAULT_SETTINGS };
     }
 
-    return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+    return { ...DEFAULT_SETTINGS, ...JSON.parse(raw), date: getTodayLocalDateValue() };
   } catch {
     return { ...DEFAULT_SETTINGS };
   }
@@ -90,7 +96,7 @@ function applySettings(settings) {
     classInput.value = settings.className ?? "";
   }
   nameInput.value = settings.studentName;
-  dateInput.value = settings.date;
+  dateInput.value = settings.date || getTodayLocalDateValue();
   startNumberInput.value = settings.startNumber;
   pageCountInput.value = settings.pageCount;
   rowCountInput.value = settings.rowCount;
@@ -103,7 +109,7 @@ function collectSettings() {
     title: titleInput.value.trim() || DEFAULT_SETTINGS.title,
     className: classInput ? classInput.value.trim() : "",
     studentName: nameInput.value.trim(),
-    date: dateInput.value,
+    date: dateInput.value || getTodayLocalDateValue(),
     startNumber: clampNumber(startNumberInput.value, 1, 1000000, DEFAULT_SETTINGS.startNumber),
     pageCount: clampNumber(pageCountInput.value, 1, 50, DEFAULT_SETTINGS.pageCount),
     columnCount: 2,
