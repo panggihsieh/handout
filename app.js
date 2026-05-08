@@ -1,4 +1,4 @@
-﻿const STORAGE_KEY = "rowcolpage.v3.settings";
+const STORAGE_KEY = "rowcolpage.v3.settings";
 
 function getTodayLocalDateValue() {
   const now = new Date();
@@ -455,14 +455,43 @@ function bindCell(cell, cellIndex) {
     pasteInput.value = "";
   });
 
-  imagePasteButton.addEventListener("click", () => {
+  imagePasteButton.addEventListener("click", async () => {
     setActiveCell(cellIndex, "image");
-    pasteInput.focus();
+    try {
+      const items = await navigator.clipboard.read();
+      for (const item of items) {
+        for (const type of item.types) {
+          if (type.startsWith("image/")) {
+            const blob = await item.getType(type);
+            await applyImageToCell(cellIndex, blob);
+            setActiveCell(cellIndex, null);
+            return;
+          }
+        }
+      }
+      alert("剪貼簿中沒有圖片！");
+    } catch (err) {
+      console.error("Failed to read clipboard:", err);
+      pasteInput.focus();
+      alert("無法直接讀取剪貼簿（可能未授權）。請點選後，直接按 Ctrl+V 貼上。");
+    }
   });
 
-  textPasteButton.addEventListener("click", () => {
+  textPasteButton.addEventListener("click", async () => {
     setActiveCell(cellIndex, "text");
-    pasteInput.focus();
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) {
+        applyTextToCell(cellIndex, text);
+        setActiveCell(cellIndex, null);
+      } else {
+        alert("剪貼簿中沒有文字！");
+      }
+    } catch (err) {
+      console.error("Failed to read clipboard:", err);
+      pasteInput.focus();
+      alert("無法直接讀取剪貼簿（可能未授權）。請點選後，直接按 Ctrl+V 貼上。");
+    }
   });
 
   fontDecreaseButton?.addEventListener("click", () => {
