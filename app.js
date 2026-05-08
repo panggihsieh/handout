@@ -155,6 +155,32 @@ function getImageFileFromClipboardData(clipboardData) {
   return null;
 }
 
+async function readImageFromClipboard() {
+  if (!navigator.clipboard?.read) {
+    return null;
+  }
+
+  const clipboardItems = await navigator.clipboard.read();
+
+  for (const clipboardItem of clipboardItems) {
+    const imageType = clipboardItem.types.find((type) => type.startsWith("image/"));
+
+    if (imageType) {
+      return clipboardItem.getType(imageType);
+    }
+  }
+
+  return null;
+}
+
+async function readTextFromClipboard() {
+  if (!navigator.clipboard?.readText) {
+    return "";
+  }
+
+  return (await navigator.clipboard.readText()).trim();
+}
+
 function readBlobAsDataUrl(blob) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -418,13 +444,39 @@ function bindCell(cell, cellIndex) {
     }
   });
 
-  imagePasteButton.addEventListener("click", () => {
+  imagePasteButton.addEventListener("click", async () => {
     setActiveCell(cellIndex, "image");
+
+    try {
+      const imageBlob = await readImageFromClipboard();
+
+      if (imageBlob) {
+        setActiveCell(cellIndex, null);
+        await applyImageToCell(cellIndex, imageBlob);
+        return;
+      }
+    } catch {
+      // Fallback to manual paste mode below.
+    }
+
     pane.focus();
   });
 
-  textPasteButton.addEventListener("click", () => {
+  textPasteButton.addEventListener("click", async () => {
     setActiveCell(cellIndex, "text");
+
+    try {
+      const text = await readTextFromClipboard();
+
+      if (text) {
+        setActiveCell(cellIndex, null);
+        applyTextToCell(cellIndex, text);
+        return;
+      }
+    } catch {
+      // Fallback to manual paste mode below.
+    }
+
     pane.focus();
   });
 
