@@ -7,7 +7,7 @@ function getTodayLocalDateValue() {
 }
 
 const DEFAULT_SETTINGS = {
-  title: "憭批??剔",
+  title: "大南六甲",
   className: "",
   studentName: "",
   date: getTodayLocalDateValue(),
@@ -135,7 +135,7 @@ function updateGuideMode(guideMode) {
 function updateSignatureVisibility(showSignature) {
   pagesRoot.classList.toggle("show-signature", showSignature);
   pagesRoot.classList.toggle("hide-signature", !showSignature);
-  signatureToggle.textContent = showSignature ? "憿舐內" : "?梯?";
+  signatureToggle.textContent = showSignature ? "顯示" : "隱藏";
   signatureToggle.setAttribute("aria-pressed", String(showSignature));
 }
 
