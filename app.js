@@ -1,4 +1,4 @@
-const STORAGE_KEY = "rowcolpage.v3.settings";
+﻿const STORAGE_KEY = "rowcolpage.v3.settings";
 
 function getTodayLocalDateValue() {
   const now = new Date();
@@ -7,7 +7,7 @@ function getTodayLocalDateValue() {
 }
 
 const DEFAULT_SETTINGS = {
-  title: "大南六甲",
+  title: "憭批??剔",
   className: "",
   studentName: "",
   date: getTodayLocalDateValue(),
@@ -24,6 +24,7 @@ const cellItems = new Map();
 const cellFontScales = new Map();
 const cellBindings = new Map();
 let activeCellIndex = null;
+let activePasteMode = null;
 
 const titleInput = document.querySelector("#titleInput");
 const classInput = document.querySelector("#classInput");
@@ -134,7 +135,7 @@ function updateGuideMode(guideMode) {
 function updateSignatureVisibility(showSignature) {
   pagesRoot.classList.toggle("show-signature", showSignature);
   pagesRoot.classList.toggle("hide-signature", !showSignature);
-  signatureToggle.textContent = showSignature ? "顯示" : "隱藏";
+  signatureToggle.textContent = showSignature ? "憿舐內" : "?梯?";
   signatureToggle.setAttribute("aria-pressed", String(showSignature));
 }
 
@@ -161,32 +162,6 @@ function readBlobAsDataUrl(blob) {
     reader.onerror = () => reject(reader.error);
     reader.readAsDataURL(blob);
   });
-}
-
-async function readClipboardText() {
-  if (!navigator.clipboard?.readText) {
-    return "";
-  }
-
-  return (await navigator.clipboard.readText()).trim();
-}
-
-async function readClipboardImage() {
-  if (!navigator.clipboard?.read) {
-    return null;
-  }
-
-  const clipboardItems = await navigator.clipboard.read();
-
-  for (const clipboardItem of clipboardItems) {
-    const imageType = clipboardItem.types.find((type) => type.startsWith("image/"));
-
-    if (imageType) {
-      return clipboardItem.getType(imageType);
-    }
-  }
-
-  return null;
 }
 
 function escapeHtml(value) {
@@ -298,7 +273,7 @@ function renderCellContent(container, pane, item, cellIndex = null) {
   if (item.type === "image") {
     const image = document.createElement("img");
     image.className = "problem-image";
-    image.alt = "題目圖片";
+    image.alt = "憿??";
     image.src = item.value;
     container.appendChild(image);
     return;
@@ -334,13 +309,14 @@ function updateActiveState() {
   cellBindings.forEach(({ pane, imagePasteButton, textPasteButton }, cellIndex) => {
     const isActive = cellIndex === activeCellIndex;
     pane.classList.toggle("is-paste-target", isActive);
-    imagePasteButton.classList.toggle("is-active", isActive);
-    textPasteButton.classList.toggle("is-active", isActive);
+    imagePasteButton.classList.toggle("is-active", isActive && activePasteMode === "image");
+    textPasteButton.classList.toggle("is-active", isActive && activePasteMode === "text");
   });
 }
 
-function setActiveCell(cellIndex) {
+function setActiveCell(cellIndex, pasteMode = activePasteMode) {
   activeCellIndex = cellIndex;
+  activePasteMode = pasteMode;
   updateActiveState();
 }
 
@@ -381,7 +357,6 @@ async function applyImageToCell(cellIndex, fileOrBlob) {
 function applyTextToCell(cellIndex, text) {
   return setCellItem(cellIndex, { type: "text", value: text, fontScale: getCellFontScale(cellIndex) });
 }
-
 function bindCell(cell, cellIndex) {
   const pane = cell.querySelector(".question-pane");
   const content = cell.querySelector(".cell-content");
@@ -392,7 +367,7 @@ function bindCell(cell, cellIndex) {
   const clearButton = cell.querySelector(".cell-clear-button");
 
   pane.tabIndex = 0;
-  pane.setAttribute("title", "點選這一格後可按 Ctrl+V 貼上題圖或題目");
+  pane.setAttribute("title", "先點按鈕，再按 Ctrl+V 貼上圖片或文字");
 
   cellBindings.set(cellIndex, {
     pane,
@@ -409,7 +384,7 @@ function bindCell(cell, cellIndex) {
   updateActiveState();
 
   const activate = () => {
-    setActiveCell(cellIndex);
+    setActiveCell(cellIndex, activePasteMode);
   };
 
   cell.addEventListener("click", activate);
@@ -424,61 +399,42 @@ function bindCell(cell, cellIndex) {
     }
 
     event.preventDefault();
-    setActiveCell(cellIndex);
 
-    if (imageFile) {
+    if (imageFile && activePasteMode !== "text") {
+      setActiveCell(cellIndex, null);
       await applyImageToCell(cellIndex, imageFile);
       return;
     }
 
     if (text) {
+      setActiveCell(cellIndex, null);
       applyTextToCell(cellIndex, text);
+      return;
+    }
+
+    if (imageFile) {
+      setActiveCell(cellIndex, null);
+      await applyImageToCell(cellIndex, imageFile);
     }
   });
 
-  imagePasteButton.addEventListener("click", async () => {
-    setActiveCell(cellIndex);
-
-    try {
-      const imageBlob = await readClipboardImage();
-
-      if (!imageBlob) {
-        window.alert("剪貼簿目前沒有圖片，請先複製題圖後再貼上。");
-        return;
-      }
-
-      await applyImageToCell(cellIndex, imageBlob);
-    } catch (error) {
-      console.error(error);
-      window.alert("目前無法直接讀取剪貼簿圖片，請改用 Ctrl+V 貼上題圖。");
-    }
+  imagePasteButton.addEventListener("click", () => {
+    setActiveCell(cellIndex, "image");
+    pane.focus();
   });
 
-  textPasteButton.addEventListener("click", async () => {
-    setActiveCell(cellIndex);
-
-    try {
-      const text = await readClipboardText();
-
-      if (!text) {
-        window.alert("剪貼簿目前沒有文字題目，請先複製題目文字後再貼上。");
-        return;
-      }
-
-      applyTextToCell(cellIndex, text);
-    } catch (error) {
-      console.error(error);
-      window.alert("目前無法直接讀取剪貼簿文字，請改用 Ctrl+V 貼上題目。");
-    }
+  textPasteButton.addEventListener("click", () => {
+    setActiveCell(cellIndex, "text");
+    pane.focus();
   });
 
   fontDecreaseButton?.addEventListener("click", () => {
-    setActiveCell(cellIndex);
+    setActiveCell(cellIndex, activePasteMode);
     updateCellFontScale(cellIndex, -5);
   });
 
   fontIncreaseButton?.addEventListener("click", () => {
-    setActiveCell(cellIndex);
+    setActiveCell(cellIndex, activePasteMode);
     updateCellFontScale(cellIndex, 5);
   });
 
@@ -591,13 +547,21 @@ document.addEventListener("paste", async (event) => {
 
   event.preventDefault();
 
-  if (imageFile) {
+  if (imageFile && activePasteMode !== "text") {
+    setActiveCell(activeCellIndex, null);
     await applyImageToCell(activeCellIndex, imageFile);
     return;
   }
 
   if (text) {
+    setActiveCell(activeCellIndex, null);
     applyTextToCell(activeCellIndex, text);
+    return;
+  }
+
+  if (imageFile) {
+    setActiveCell(activeCellIndex, null);
+    await applyImageToCell(activeCellIndex, imageFile);
   }
 });
 
