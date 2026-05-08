@@ -16,7 +16,6 @@ const DEFAULT_SETTINGS = {
   columnCount: 2,
   rowCount: 4,
   fontScale: 120,
-  guideMode: "none",
   showSignature: true,
 };
 
@@ -35,7 +34,7 @@ const dateInput = document.querySelector("#dateInput");
 const startNumberInput = document.querySelector("#startNumberInput");
 const pageCountInput = document.querySelector("#pageCountInput");
 const rowCountInput = document.querySelector("#rowCountInput");
-const guideSelect = document.querySelector("#guideSelect");
+
 const signatureToggle = document.querySelector("#signatureToggle");
 const resetButton = document.querySelector("#resetButton");
 const printButton = document.querySelector("#printButton");
@@ -115,7 +114,6 @@ function applySettings(settings) {
   startNumberInput.value = settings.startNumber;
   pageCountInput.value = settings.pageCount;
   rowCountInput.value = settings.rowCount;
-  guideSelect.value = settings.guideMode;
   updateSignatureVisibility(settings.showSignature);
 }
 
@@ -130,21 +128,11 @@ function collectSettings() {
     columnCount: 2,
     rowCount: clampNumber(rowCountInput.value, 1, 12, DEFAULT_SETTINGS.rowCount),
     fontScale: DEFAULT_SETTINGS.fontScale,
-    guideMode: guideSelect.value,
     showSignature: getSignatureVisible(),
   };
 }
 
-function updateGuideMode(guideMode) {
-  pagesRoot.className = "pages";
 
-  if (guideMode === "none") {
-    pagesRoot.classList.add("no-guides");
-    return;
-  }
-
-  pagesRoot.classList.add(`guide-${guideMode}`);
-}
 
 function updateSignatureVisibility(showSignature) {
   pagesRoot.classList.toggle("show-signature", showSignature);
@@ -527,7 +515,7 @@ function renderPages() {
 
   pagesRoot.replaceChildren();
   cellBindings.clear();
-  updateGuideMode(settings.guideMode);
+  pagesRoot.className = "pages";
   updateSignatureVisibility(settings.showSignature);
   saveSettings(settings);
 
@@ -574,7 +562,7 @@ function renderPages() {
   }
 }
 
-[titleInput, classInput, nameInput, dateInput, startNumberInput, pageCountInput, rowCountInput, guideSelect]
+[titleInput, classInput, nameInput, dateInput, startNumberInput, pageCountInput, rowCountInput]
   .filter(Boolean)
   .forEach((element) => {
     element.addEventListener("input", renderPages);
