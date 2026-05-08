@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Latex圖文貼 練習簿</title>
+  <title>Latex數學-圖文練習簿</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -11,9 +11,8 @@
   <div class="app-shell">
     <header class="hero">
       <div>
-        <p class="eyebrow">Math Handout</p>
-        <p class="version-pill">版本:草稿 math-scripts/latex markdown</p>
-        <h1>Latex圖文貼 練習簿</h1>
+        <p class="version-pill">版本:草稿 Math's Scrapbook v.1.0</p>
+        <h1>Latex數學-圖文練習簿</h1>
         <p class="subtitle">A4 直式，幾何題可逐格插入截圖，文字題可逐格貼上原始題目並正常渲染 LaTeX 與 Markdown。</p>
       </div>
       <div class="hero-actions">
@@ -56,11 +55,6 @@
       <label class="field">
         <span>列數</span>
         <input id="rowCountInput" type="number" min="1" max="12" value="4">
-      </label>
-
-      <label class="field">
-        <span>字體大小</span>
-        <input id="fontScaleInput" type="number" min="70" max="180" step="5" value="120">
       </label>
 
       <label class="field">
@@ -125,11 +119,16 @@
               <span class="button-icon button-icon-text" aria-hidden="true"></span>
               <span>貼上文字</span>
             </button>
+            <div class="cell-font-stepper" aria-label="題目字體大小調整">
+              <button class="cell-font-decrease-button" type="button" aria-label="縮小題目字體">-</button>
+              <button class="cell-font-increase-button" type="button" aria-label="放大題目字體">+</button>
+            </div>
             <button class="cell-clear-button" type="button">清除</button>
           </div>
           <div class="cell-content"></div>
         </section>
         <section class="work-pane">
+          <div class="work-pane-number"></div>
           <div class="work-pane-title">計算程序區</div>
           <div class="work-pane-body"></div>
         </section>

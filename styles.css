@@ -328,6 +328,7 @@ h1 {
 }
 
 .work-pane {
+  position: relative;
   display: grid;
   grid-template-rows: auto 1fr;
   border-left: 2px solid rgba(168, 162, 158, 0.7);
@@ -335,8 +336,23 @@ h1 {
   padding-left: 12px;
 }
 
+.work-pane-number {
+  position: absolute;
+  top: 10px;
+  left: 18px;
+  z-index: 2;
+  min-width: 42px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(154, 52, 18, 0.18);
+  color: var(--accent-deep);
+  font-weight: 800;
+  text-align: center;
+}
+
 .work-pane-title {
-  padding: 4px 10px 8px;
+  padding: 4px 10px 8px 70px;
   color: var(--accent-deep);
   font-size: 0.92rem;
   font-weight: 800;
@@ -383,6 +399,33 @@ h1 {
 .cell-text-paste-button.is-active {
   background: rgba(217, 119, 6, 0.18);
   border-color: rgba(217, 119, 6, 0.55);
+}
+
+.cell-font-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cell-font-decrease-button,
+.cell-font-increase-button {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid rgba(217, 119, 6, 0.3);
+  background: rgba(255, 248, 235, 0.96);
+  color: var(--accent-deep);
+  font: inherit;
+  font-size: 1.1rem;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.cell-font-decrease-button:hover,
+.cell-font-increase-button:hover {
+  border-color: rgba(217, 119, 6, 0.55);
+  background: rgba(217, 119, 6, 0.14);
 }
 
 .button-icon {
@@ -489,8 +532,8 @@ h1 {
   padding: 6px 6px 4px 0;
   text-align: left;
   vertical-align: top;
-  font-size: 1.1rem;
-  line-height: 1.46;
+  font-size: 0.92rem;
+  line-height: 1.28;
   overflow-wrap: anywhere;
 }
 

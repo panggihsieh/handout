@@ -15,6 +15,7 @@ const DEFAULT_SETTINGS = {
 };
 
 const cellItems = new Map();
+const cellFontScales = new Map();
 const cellBindings = new Map();
 let activeCellIndex = null;
 
@@ -25,7 +26,6 @@ const dateInput = document.querySelector("#dateInput");
 const startNumberInput = document.querySelector("#startNumberInput");
 const pageCountInput = document.querySelector("#pageCountInput");
 const rowCountInput = document.querySelector("#rowCountInput");
-const fontScaleInput = document.querySelector("#fontScaleInput");
 const guideSelect = document.querySelector("#guideSelect");
 const signatureToggle = document.querySelector("#signatureToggle");
 const resetButton = document.querySelector("#resetButton");
@@ -94,7 +94,6 @@ function applySettings(settings) {
   startNumberInput.value = settings.startNumber;
   pageCountInput.value = settings.pageCount;
   rowCountInput.value = settings.rowCount;
-  fontScaleInput.value = settings.fontScale ?? DEFAULT_SETTINGS.fontScale;
   guideSelect.value = settings.guideMode;
   updateSignatureVisibility(settings.showSignature);
 }
@@ -109,7 +108,7 @@ function collectSettings() {
     pageCount: clampNumber(pageCountInput.value, 1, 50, DEFAULT_SETTINGS.pageCount),
     columnCount: 2,
     rowCount: clampNumber(rowCountInput.value, 1, 12, DEFAULT_SETTINGS.rowCount),
-    fontScale: clampNumber(fontScaleInput.value, 70, 180, DEFAULT_SETTINGS.fontScale),
+    fontScale: DEFAULT_SETTINGS.fontScale,
     guideMode: guideSelect.value,
     showSignature: getSignatureVisible(),
   };
@@ -239,71 +238,46 @@ function doesTextFit(container, textBlock) {
 }
 
 function getQuestionBaseSize(fontScale = DEFAULT_SETTINGS.fontScale) {
-  return 0.92 * (fontScale / 100);
+  return 0.92 * (fontScale / 120);
 }
 
 function applyQuestionTextSize(textBlock, size) {
   textBlock.style.fontSize = `${size.toFixed(3)}rem`;
-  textBlock.style.lineHeight = size > 1.12 ? "1.24" : size > 0.92 ? "1.28" : "1.22";
+  textBlock.style.lineHeight = "1.28";
 }
 
 function fitQuestionText(container, textBlock, fontScale = DEFAULT_SETTINGS.fontScale) {
-  if (!container.clientWidth || !container.clientHeight) {
+  const size = getQuestionBaseSize(fontScale);
+  applyQuestionTextSize(textBlock, size);
+  textBlock.classList.remove("is-compact");
+}
+
+function getCellFontScale(cellIndex) {
+  return cellFontScales.get(cellIndex) ?? DEFAULT_SETTINGS.fontScale;
+}
+
+function updateCellFontScale(cellIndex, delta) {
+  const nextScale = clampNumber(getCellFontScale(cellIndex) + delta, 70, 180, DEFAULT_SETTINGS.fontScale);
+  cellFontScales.set(cellIndex, nextScale);
+
+  const binding = cellBindings.get(cellIndex);
+  const item = cellItems.get(cellIndex);
+
+  if (item) {
+    item.fontScale = nextScale;
+  }
+
+  if (!binding || item?.type !== "text") {
     return;
   }
 
-  const minSize = 0.72;
-  const preferredFloor = 0.92;
-  const targetSize = Math.max(minSize, getQuestionBaseSize(fontScale));
-  let best = minSize;
-
-  applyQuestionTextSize(textBlock, targetSize);
-
-  if (doesTextFit(container, textBlock)) {
-    best = targetSize;
-  } else {
-    const preferredSize = Math.min(targetSize, preferredFloor);
-    applyQuestionTextSize(textBlock, preferredSize);
-
-    if (doesTextFit(container, textBlock)) {
-      let low = preferredSize;
-      let high = targetSize;
-      best = preferredSize;
-
-      for (let attempt = 0; attempt < 14; attempt += 1) {
-        const mid = (low + high) / 2;
-        applyQuestionTextSize(textBlock, mid);
-
-        if (doesTextFit(container, textBlock)) {
-          best = mid;
-          low = mid;
-        } else {
-          high = mid;
-        }
-      }
-    } else {
-      let low = minSize;
-      let high = preferredSize;
-
-      for (let attempt = 0; attempt < 14; attempt += 1) {
-        const mid = (low + high) / 2;
-        applyQuestionTextSize(textBlock, mid);
-
-        if (doesTextFit(container, textBlock)) {
-          best = mid;
-          low = mid;
-        } else {
-          high = mid;
-        }
-      }
-    }
+  const textBlock = binding.content.querySelector(".problem-text");
+  if (textBlock) {
+    fitQuestionText(binding.content, textBlock, nextScale);
   }
-
-  applyQuestionTextSize(textBlock, best);
-  textBlock.classList.toggle("is-compact", best <= 0.84);
 }
 
-function renderCellContent(container, pane, item) {
+function renderCellContent(container, pane, item, cellIndex = null) {
   container.replaceChildren();
 
   const hasContent = Boolean(item?.value);
@@ -328,14 +302,11 @@ function renderCellContent(container, pane, item) {
   textBlock.className = "problem-text";
   renderMathMarkdown(textBlock, item.value);
   container.appendChild(textBlock);
-  const currentSettings = collectSettings();
-  requestAnimationFrame(() => fitQuestionText(container, textBlock, currentSettings.fontScale));
+  const textScale = cellIndex === null ? (item.fontScale ?? DEFAULT_SETTINGS.fontScale) : getCellFontScale(cellIndex);
+  requestAnimationFrame(() => fitQuestionText(container, textBlock, textScale));
 }
 
 function refreshQuestionTextSizing() {
-  const { fontScale } = collectSettings();
-  pagesRoot.style.setProperty("--question-font-scale", String(fontScale));
-
   cellBindings.forEach(({ content, pane }, cellIndex) => {
     const item = cellItems.get(cellIndex);
 
@@ -349,7 +320,7 @@ function refreshQuestionTextSizing() {
       return;
     }
 
-    fitQuestionText(content, textBlock, fontScale);
+    fitQuestionText(content, textBlock, item.fontScale ?? getCellFontScale(cellIndex));
   });
 }
 
@@ -377,13 +348,19 @@ function setCellItem(cellIndex, item) {
   const normalizedItem = {
     type: item.type,
     value: normalizedValue,
+    fontScale:
+      item.type === "text"
+        ? clampNumber(item.fontScale ?? getCellFontScale(cellIndex), 70, 180, DEFAULT_SETTINGS.fontScale)
+        : getCellFontScale(cellIndex),
   };
+
+  cellFontScales.set(cellIndex, normalizedItem.fontScale);
 
   cellItems.set(cellIndex, normalizedItem);
 
   const binding = cellBindings.get(cellIndex);
   if (binding) {
-    renderCellContent(binding.content, binding.pane, normalizedItem);
+    renderCellContent(binding.content, binding.pane, normalizedItem, cellIndex);
     binding.clearButton.hidden = false;
   }
 
@@ -392,11 +369,11 @@ function setCellItem(cellIndex, item) {
 
 async function applyImageToCell(cellIndex, fileOrBlob) {
   const imageUrl = await readBlobAsDataUrl(fileOrBlob);
-  return setCellItem(cellIndex, { type: "image", value: imageUrl });
+  return setCellItem(cellIndex, { type: "image", value: imageUrl, fontScale: getCellFontScale(cellIndex) });
 }
 
 function applyTextToCell(cellIndex, text) {
-  return setCellItem(cellIndex, { type: "text", value: text });
+  return setCellItem(cellIndex, { type: "text", value: text, fontScale: getCellFontScale(cellIndex) });
 }
 
 function bindCell(cell, cellIndex) {
@@ -404,6 +381,8 @@ function bindCell(cell, cellIndex) {
   const content = cell.querySelector(".cell-content");
   const imagePasteButton = cell.querySelector(".cell-image-paste-button");
   const textPasteButton = cell.querySelector(".cell-text-paste-button");
+  const fontDecreaseButton = cell.querySelector(".cell-font-decrease-button");
+  const fontIncreaseButton = cell.querySelector(".cell-font-increase-button");
   const clearButton = cell.querySelector(".cell-clear-button");
 
   pane.tabIndex = 0;
@@ -414,10 +393,12 @@ function bindCell(cell, cellIndex) {
     content,
     imagePasteButton,
     textPasteButton,
+    fontDecreaseButton,
+    fontIncreaseButton,
     clearButton,
   });
 
-  renderCellContent(content, pane, cellItems.get(cellIndex));
+  renderCellContent(content, pane, cellItems.get(cellIndex), cellIndex);
   clearButton.hidden = !cellItems.has(cellIndex);
   updateActiveState();
 
@@ -485,9 +466,20 @@ function bindCell(cell, cellIndex) {
     }
   });
 
+  fontDecreaseButton?.addEventListener("click", () => {
+    setActiveCell(cellIndex);
+    updateCellFontScale(cellIndex, -5);
+  });
+
+  fontIncreaseButton?.addEventListener("click", () => {
+    setActiveCell(cellIndex);
+    updateCellFontScale(cellIndex, 5);
+  });
+
   clearButton.addEventListener("click", () => {
     cellItems.delete(cellIndex);
-    renderCellContent(content, pane, null);
+    cellFontScales.delete(cellIndex);
+    renderCellContent(content, pane, null, cellIndex);
     clearButton.hidden = true;
   });
 }
@@ -507,7 +499,6 @@ function renderPages() {
 
   pagesRoot.replaceChildren();
   cellBindings.clear();
-  pagesRoot.style.setProperty("--question-font-scale", String(settings.fontScale));
   updateGuideMode(settings.guideMode);
   updateSignatureVisibility(settings.showSignature);
   saveSettings(settings);
@@ -541,8 +532,12 @@ function renderPages() {
       const cellFragment = cellTemplate.content.cloneNode(true);
       const cellElement = cellFragment.querySelector(".cell");
       const cellNumber = cellFragment.querySelector(".cell-number");
+      const workPaneNumber = cellFragment.querySelector(".work-pane-number");
 
       cellNumber.textContent = settings.startNumber + itemIndex;
+      if (workPaneNumber) {
+        workPaneNumber.textContent = settings.startNumber + itemIndex;
+      }
       bindCell(cellElement, itemIndex);
       grid.appendChild(cellFragment);
     }
@@ -558,18 +553,6 @@ function renderPages() {
     element.addEventListener("change", renderPages);
   });
 
-fontScaleInput.addEventListener("input", () => {
-  saveSettings(collectSettings());
-  renderPages();
-  requestAnimationFrame(refreshQuestionTextSizing);
-});
-
-fontScaleInput.addEventListener("change", () => {
-  saveSettings(collectSettings());
-  renderPages();
-  requestAnimationFrame(refreshQuestionTextSizing);
-});
-
 signatureToggle.addEventListener("click", () => {
   updateSignatureVisibility(!getSignatureVisible());
   renderPages();
@@ -578,6 +561,7 @@ signatureToggle.addEventListener("click", () => {
 resetButton.addEventListener("click", () => {
   localStorage.removeItem(STORAGE_KEY);
   cellItems.clear();
+  cellFontScales.clear();
   activeCellIndex = null;
   applySettings({ ...DEFAULT_SETTINGS });
   renderPages();
