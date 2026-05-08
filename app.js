@@ -7,7 +7,7 @@ function getTodayLocalDateValue() {
 }
 
 const DEFAULT_SETTINGS = {
-  title: "大南六甲",
+  title: "梅山鄉大南國小",
   className: "",
   studentName: "",
   date: getTodayLocalDateValue(),
@@ -135,7 +135,7 @@ function updateGuideMode(guideMode) {
 function updateSignatureVisibility(showSignature) {
   pagesRoot.classList.toggle("show-signature", showSignature);
   pagesRoot.classList.toggle("hide-signature", !showSignature);
-  signatureToggle.textContent = showSignature ? "顯示" : "隱藏";
+  signatureToggle.textContent = showSignature ? "on" : "off";
   signatureToggle.setAttribute("aria-pressed", String(showSignature));
 }
 
