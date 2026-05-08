@@ -20,7 +20,7 @@ const DEFAULT_SETTINGS = {
   showSignature: true,
 };
 
-const LEGACY_DEFAULT_TITLES = new Set(["大南六甲", "大南國小"]);
+
 
 const cellItems = new Map();
 const cellFontScales = new Map();
@@ -74,7 +74,7 @@ function withFallback(value, fallback) {
 function normalizeTitle(title) {
   const normalizedTitle = String(title ?? "").trim();
 
-  if (!normalizedTitle || LEGACY_DEFAULT_TITLES.has(normalizedTitle)) {
+  if (!normalizedTitle) {
     return DEFAULT_SETTINGS.title;
   }
 
