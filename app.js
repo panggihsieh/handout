@@ -20,6 +20,8 @@ const DEFAULT_SETTINGS = {
   showSignature: true,
 };
 
+const LEGACY_DEFAULT_TITLES = new Set(["大南六甲", "大南國小"]);
+
 const cellItems = new Map();
 const cellFontScales = new Map();
 const cellBindings = new Map();
@@ -69,6 +71,16 @@ function withFallback(value, fallback) {
   return value.trim() || fallback;
 }
 
+function normalizeTitle(title) {
+  const normalizedTitle = String(title ?? "").trim();
+
+  if (!normalizedTitle || LEGACY_DEFAULT_TITLES.has(normalizedTitle)) {
+    return DEFAULT_SETTINGS.title;
+  }
+
+  return normalizedTitle;
+}
+
 function getSignatureVisible() {
   return signatureToggle.getAttribute("aria-pressed") === "true";
 }
@@ -81,7 +93,9 @@ function loadSettings() {
       return { ...DEFAULT_SETTINGS };
     }
 
-    return { ...DEFAULT_SETTINGS, ...JSON.parse(raw), date: getTodayLocalDateValue() };
+    const parsed = { ...DEFAULT_SETTINGS, ...JSON.parse(raw), date: getTodayLocalDateValue() };
+    parsed.title = normalizeTitle(parsed.title);
+    return parsed;
   } catch {
     return { ...DEFAULT_SETTINGS };
   }
@@ -92,7 +106,7 @@ function saveSettings(settings) {
 }
 
 function applySettings(settings) {
-  titleInput.value = settings.title;
+  titleInput.value = normalizeTitle(settings.title);
   if (classInput) {
     classInput.value = settings.className ?? "";
   }
@@ -107,7 +121,7 @@ function applySettings(settings) {
 
 function collectSettings() {
   return {
-    title: titleInput.value.trim() || DEFAULT_SETTINGS.title,
+    title: normalizeTitle(titleInput.value),
     className: classInput ? classInput.value.trim() : "",
     studentName: nameInput.value.trim(),
     date: dateInput.value || getTodayLocalDateValue(),
