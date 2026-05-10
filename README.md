@@ -167,6 +167,43 @@ https://panggihsieh.github.io/handout/?9=1|https://example.com/sample.png
 - 未指定的欄位會使用預設值
 - 圖片與文字可透過重複參數方式指定多個格子
 
+## 第二版 workflow
+
+第二版目前固定在 `v2` 分支開發，確認完成前不直接改動 `main`。
+
+### 分支流程
+
+1. 需求開發一律在 `v2` 分支進行
+2. 本地端先測畫面、貼上流程與 API 參數
+3. push 到 `origin/v2`
+4. 確認遠端 GitHub Pages 或分支內容正常
+5. 第二版確認完成後，再合併回 `main`
+
+### GitHub Actions workflow
+
+目前已建立：
+
+- `.github/workflows/v2-validation.yml`
+
+用途如下：
+
+1. 在 `main` 與 `v2` 的 push / pull request 時自動執行
+2. 檢查 `app.js` 語法是否正常
+3. 檢查第二版 API 需要的關鍵結構是否存在
+4. 檢查 `README.md` 是否保留第二版 API 與 workflow 說明
+
+### 第二版建議驗證順序
+
+每次修改第二版時，建議照下面順序驗證：
+
+1. 本地端開啟 `index.html`
+2. 測試一般輸入流程
+3. 測試 API 網址參數
+4. 測試可疑輸入是否被封鎖
+5. push 到 `v2`
+6. 等 GitHub Actions workflow 檢查通過
+7. 再決定是否進一步部署或合併
+
 ## 備註與未來展望
 
 - 目前為第一版草稿完成版本。

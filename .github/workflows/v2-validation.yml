@@ -1,0 +1,63 @@
+name: Validate Handout V2
+
+on:
+  push:
+    branches:
+      - main
+      - v2
+  pull_request:
+    branches:
+      - main
+      - v2
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Check app.js syntax
+        shell: bash
+        run: |
+          node -e "const fs=require('fs'); new Function(fs.readFileSync('app.js','utf8')); console.log('app.js syntax ok');"
+
+      - name: Validate V2 API hooks
+        shell: bash
+        run: |
+          node <<'EOF'
+          const fs = require('fs');
+
+          function assertIncludes(file, text) {
+            const source = fs.readFileSync(file, 'utf8');
+            if (!source.includes(text)) {
+              throw new Error(`${file} is missing required text: ${text}`);
+            }
+          }
+
+          assertIncludes('app.js', 'const API_PARAM_KEYS');
+          assertIncludes('app.js', 'const SUSPICIOUS_PATTERNS');
+          assertIncludes('app.js', 'function applyApiParams');
+          assertIncludes('app.js', 'function setApiNotice');
+          assertIncludes('index.html', 'id="apiNotice"');
+          assertIncludes('README.md', '第二版：輸入介面 API');
+          console.log('v2 api hooks ok');
+          EOF
+
+      - name: Validate workflow documentation
+        shell: bash
+        run: |
+          node <<'EOF'
+          const fs = require('fs');
+          const readme = fs.readFileSync('README.md', 'utf8');
+          if (!readme.includes('第二版 workflow')) {
+            throw new Error('README.md is missing the V2 workflow section.');
+          }
+          console.log('README workflow section ok');
+          EOF
