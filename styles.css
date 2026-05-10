@@ -143,6 +143,32 @@ h1 {
   line-height: 1.6;
 }
 
+.api-notice {
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(154, 52, 18, 0.22);
+  background: rgba(255, 247, 237, 0.92);
+  color: #7c2d12;
+  line-height: 1.55;
+}
+
+.api-notice.is-danger {
+  border-color: rgba(185, 28, 28, 0.28);
+  background: rgba(254, 242, 242, 0.95);
+  color: #991b1b;
+}
+
+.api-notice strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.95rem;
+}
+
+.api-notice ul {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
 .toggle-button {
   width: 100%;
   padding: 12px 14px;
