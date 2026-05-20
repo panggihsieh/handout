@@ -1,0 +1,14 @@
+{
+  "name": "handout-api",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Math's Scrapbook v2.0 static app with a small local API.",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "api": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

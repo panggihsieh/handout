@@ -126,6 +126,37 @@ h1 {
   font: inherit;
 }
 
+.stepper-control {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.stepper-button {
+  width: 100%;
+  min-height: 48px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: white;
+  color: var(--accent-deep);
+  font: inherit;
+  font-size: 1.35rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+}
+
+.stepper-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(217, 119, 6, 0.45);
+  background: rgba(255, 248, 235, 0.96);
+}
+
+.stepper-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 .field-toggle {
   align-self: end;
 }

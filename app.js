@@ -34,13 +34,13 @@ const dateInput = document.querySelector("#dateInput");
 const startNumberInput = document.querySelector("#startNumberInput");
 const pageCountInput = document.querySelector("#pageCountInput");
 const rowCountInput = document.querySelector("#rowCountInput");
-
 const signatureToggle = document.querySelector("#signatureToggle");
 const resetButton = document.querySelector("#resetButton");
 const printButton = document.querySelector("#printButton");
 const pagesRoot = document.querySelector("#pages");
 const pageTemplate = document.querySelector("#pageTemplate");
 const cellTemplate = document.querySelector("#cellTemplate");
+let currentFontScale = DEFAULT_SETTINGS.fontScale;
 
 function clampNumber(value, min, max, fallback) {
   const parsed = Number.parseInt(value, 10);
@@ -131,8 +131,6 @@ function collectSettings() {
     showSignature: getSignatureVisible(),
   };
 }
-
-
 
 function updateSignatureVisibility(showSignature) {
   pagesRoot.classList.toggle("show-signature", showSignature);
