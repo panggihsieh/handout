@@ -56,6 +56,40 @@ http://127.0.0.1:5173
 - `POST /api/handouts`
 - `POST /api/handouts/html`
 
+## API 功能使用說明
+
+第二版的 API 主要用來讓其他程式把題目資料送進本專案，並取得已整理好的講義資料或可列印頁面。
+
+常見使用情境：
+
+- 外部系統傳入一批題目文字，取得講義 JSON。
+- 外部系統傳入題目圖片 URL 或 base64 圖片，產生可列印 HTML。
+- 自動化流程先呼叫 `/api/default-settings` 取得預設設定，再覆寫需要的欄位。
+- 其他前端、Python 腳本、PowerShell 腳本或後端服務呼叫 `/api/handouts`，把輸出 JSON 存入資料庫或再加工。
+- 呼叫 `/api/handouts/html` 取得完整 HTML，交給瀏覽器、列印工具或 PDF 轉換工具使用。
+
+建議呼叫流程：
+
+1. 啟動本機服務：`npm start`
+2. 呼叫 `GET /api/health` 確認 API 正常運作。
+3. 準備 `settings`，設定標題、學生姓名、頁數、每頁題數等。
+4. 準備 `items`，每一筆代表一道題目。
+5. 需要結構化資料時，呼叫 `POST /api/handouts`。
+6. 需要可列印畫面時，呼叫 `POST /api/handouts/html`。
+
+題目資料規則：
+
+- `items[].index` 決定題目放在哪一格，從 `0` 開始。
+- `type: "text"` 代表文字題，`value` 放題目文字。
+- `type: "image"` 代表圖片題，`value` 放圖片 URL 或 `data:image/...;base64,...`。
+- 如果某一格沒有對應 item，輸出會保留空白題目格。
+- `fontScale` 可控制題目文字大小，圖片題可省略。
+
+輸出選擇：
+
+- `/api/handouts`：回傳 JSON，適合系統整合、資料儲存、後續加工。
+- `/api/handouts/html`：回傳 HTML，適合直接預覽、列印或轉 PDF。
+
 ## API 輸入格式
 
 `POST /api/handouts` 和 `POST /api/handouts/html` 使用相同輸入格式。
