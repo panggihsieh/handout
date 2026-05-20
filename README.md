@@ -1,135 +1,209 @@
-# Latex數學-圖文練習簿
+# Math's Scrapbook v2.0
 
-版本：第二版 `Math's Scrapbook v.2.0`
+Latex數學-圖文練習簿是一個可列印的 A4 數學練習單工具。第二版加入本機 API server，讓其他程式可以用 HTTP API 傳入題目文字或圖片，並取得講義 JSON 或可列印 HTML。
 
-## 第一版完成
+## 版本
 
-第一版已完成，主要目標是建立一個可用於數學講義整理、排版與列印的網頁工具。
+目前版本：第二版 `Math's Scrapbook v.2.0`
 
-本版本完成重點如下：
+## 功能
 
-1. 建立 `handout` 專案並同步到 GitHub。
-2. 專案名稱更新為 `Latex數學-圖文練習簿`。
-3. 首頁版本文字更新為 `版本:第二版 Math's Scrapbook v.2.0`。
-4. 支援 A4 直式、單欄排版。
-5. 幾何題可逐格使用 `插入截圖`。
-6. 文字題可逐格使用 `貼上文字`。
-7. 文字題支援 LaTeX / Markdown 顯示。
-8. 每格題目框內可透過 `+ / -` 調整字體大小。
-9. 右側 `計算程序區` 會顯示對應題號。
-10. 頁首資訊包含：
-   - 版型
-   - 姓名
-   - 日期
-11. 日期會和電腦本機日期同步。
-12. 列印版面已調整為適合 A4 預覽與輸出。
-13. `插入截圖 / 貼上文字` 已改成貼上模式流程，避免瀏覽器主動讀取剪貼簿造成權限提示視窗。
+- 在瀏覽器中建立 A4 數學練習單
+- 支援題目文字貼上
+- 支援題目圖片貼上
+- 支援每題題目字體大小調整
+- 每題提供右側計算過程區
+- 可切換家長簽名欄顯示
+- 可列印或另存 PDF
+- 提供本機 JSON API
+- 提供可列印 HTML API
 
-## 操作流程
+## 檔案
 
-### 1. 基本設定
-
-上方可設定：
-
-- 標題
-- 姓名
-- 日期
-- 起始編號
-- 頁數
-- 列數
-- 每格輔助線
-- 家長簽名顯示 / 隱藏
-
-### 2. 題目輸入
-
-每個格子都可獨立輸入題目。
-
-#### 幾何題
-
-1. 點選 `插入截圖`
-2. 再按 `Ctrl+V`
-3. 將圖片貼入左側題目區
-
-#### 文字題
-
-1. 點選 `貼上文字`
-2. 再按 `Ctrl+V`
-3. 將題目文字貼入左側題目區
-
-可支援：
-
-- 一般文字
-- Markdown
-- LaTeX 公式
-
-### 3. 字體調整
-
-每個題目框內都有自己的字體調整按鈕：
-
-- `-`：縮小該格字體
-- `+`：放大該格字體
-
-這個設定只影響當前格子，不影響其他題目。
-
-### 4. 清除內容
-
-每格都可按 `清除` 刪除該格內容。
-
-### 5. 列印 / 另存 PDF
-
-1. 點選右上角 `列印 / 另存 PDF`
-2. 檢查列印預覽
-3. 可直接列印或另存 PDF
-
-## 主要檔案
-
-- `index.html`：頁面結構
+- `index.html`：前端頁面
 - `styles.css`：畫面與列印樣式
-- `app.js`：互動邏輯、渲染與貼上流程
+- `app.js`：前端互動、貼上、排版與列印邏輯
+- `server.js`：本機靜態網站與 API server
+- `package.json`：Node 啟動設定
+- `API.md`：API 範例文件
 
-## 正式網址
+## 本機啟動
 
-[https://panggihsieh.github.io/handout/](https://panggihsieh.github.io/handout/)
+需要 Node.js 18 或以上版本。
 
-## 備註與未來展望
+```bash
+npm start
+```
 
-- 目前為第一版草稿完成版本。
-- 後續可持續優化字體、自動排版、題圖裁切、列印版型與更多講義模板。
-- **專案定位與過渡性質**：本專案目前仍需依賴使用者「手動截圖/貼上」來處理幾何題與圖形題。未來 AI 數學（AI Math）的發展將會解決幾何圖形或圖形類題目的 AI 生成能力（例如生成類似題），屆時這類手動拼接的需求將會減少。因此本專案屬於階段性的過渡工具。
+啟動後開啟：
 
-## 常見問題與避免方法
+```text
+http://127.0.0.1:5173/
+```
 
-### 插入截圖 / 貼上文字 為何曾經反覆失效
+## API 端點
 
-這兩個按鈕先前曾多次出現看似「修好又失效」的情況，主要原因如下：
+API 預設也跑在同一個本機服務：
 
-1. 曾嘗試使用瀏覽器主動讀取剪貼簿的方式，例如 `navigator.clipboard.read()` 與 `navigator.clipboard.readText()`。
-2. 這類 API 會受到瀏覽器權限、HTTPS、安全限制、焦點狀態與使用者手勢判定影響。
-3. 本地端 `file://` 與遠端 GitHub Pages 網址的表現不一定一致，因此容易出現「本地正常、遠端失效」或「剛修好又失效」的狀況。
-4. 瀏覽器快取舊版 `app.js` 時，也可能讓新版修正沒有立即生效，造成誤判。
+```text
+http://127.0.0.1:5173
+```
 
-### 目前採用的「點擊直接貼上」與備用流程
+可用端點：
 
-為了達成使用者「點擊按鈕直接貼上」的直覺操作，目前採用了「主動讀取 + 備用貼上」的混合模式：
+- `GET /api/health`
+- `GET /api/default-settings`
+- `POST /api/handouts`
+- `POST /api/handouts/html`
 
-1. **點擊按鈕**：程式會嘗試使用 `navigator.clipboard.read()` 或 `readText()` 直接讀取剪貼簿內容並填入。
-2. **授權提示**：第一次使用時，瀏覽器會彈出提示詢問是否允許讀取剪貼簿，使用者必須點選「允許」。
-3. **備用機制**：如果使用者拒絕授權、或瀏覽器不支援直接讀取，程式會自動將焦點移至隱藏的輸入框，並提示使用者使用 `Ctrl+V` 進行貼上。
+## API 輸入格式
 
-### 為什麼之前會失敗？
+`POST /api/handouts` 和 `POST /api/handouts/html` 使用相同輸入格式。
 
-之前「看似失效」的原因主要有兩個：
-1. **使用者習慣與設計不符**：先前的設計是「點擊按鈕後，再按 Ctrl+V」，但使用者通常預期「點擊按鈕就應該直接貼上」。因為點擊後沒有按 `Ctrl+V`，所以會覺得按鈕「無效」。
-2. **瀏覽器安全限制**：直接讀取剪貼簿在非 HTTPS 環境（或未授權時）會失敗，若沒有做好錯誤處理與備用流程，按鈕就會完全卡死。
+```json
+{
+  "settings": {
+    "title": "數學練習",
+    "className": "",
+    "studentName": "小明",
+    "date": "2026-05-20",
+    "startNumber": 1,
+    "pageCount": 1,
+    "rowCount": 4,
+    "fontScale": 120,
+    "showSignature": true
+  },
+  "items": [
+    {
+      "index": 0,
+      "type": "text",
+      "value": "計算：1 + 1 = ?",
+      "fontScale": 120
+    }
+  ]
+}
+```
 
-### 目前做法的優點
+圖片題目可以使用圖片 URL 或 base64 data URL：
 
-- **兼顧直覺與相容性**：預設提供最直覺的「點擊即貼上」體驗，同時保留 `Ctrl+V` 作為絕對可靠的備用方案。
-- **明確的錯誤提示**：若直接讀取失敗，會主動引導使用者使用鍵盤快捷鍵，避免「按鈕無效」的誤解。
+```json
+{
+  "index": 1,
+  "type": "image",
+  "value": "data:image/png;base64,iVBORw0KGgo..."
+}
+```
 
-### 日後避免重複踩坑的方法
+## 欄位限制
 
-- 每次修改貼上流程後，要同時測試：
-  - 本地端頁面
-  - 遠端 GitHub Pages 頁面
-- 若遠端看起來沒有更新，要先檢查靜態資源快取（Cache），而不是直接假設程式碼失敗。
+- `pageCount`：1 到 50
+- `rowCount`：1 到 12
+- `startNumber`：1 到 1000000
+- `fontScale`：70 到 180
+- `items[].index`：題目位置，從 0 開始
+- `items[].type`：`text` 或 `image`
+- `items[].value`：題目文字、圖片 URL，或 base64 data URL
+
+## API 輸出
+
+`POST /api/handouts` 回傳 JSON：
+
+```json
+{
+  "version": "2.0",
+  "settings": {},
+  "summary": {
+    "pageCount": 1,
+    "rowCount": 4,
+    "totalCells": 4,
+    "itemCount": 1
+  },
+  "pages": []
+}
+```
+
+`POST /api/handouts/html` 回傳 `text/html`，可直接顯示、列印，或交給其他工具轉成 PDF。
+
+## 呼叫範例
+
+PowerShell：
+
+```powershell
+$body = @{
+  settings = @{
+    title = "數學練習"
+    studentName = "小明"
+    pageCount = 1
+    rowCount = 4
+  }
+  items = @(
+    @{
+      index = 0
+      type = "text"
+      value = "計算：1 + 1 = ?"
+      fontScale = 120
+    }
+  )
+} | ConvertTo-Json -Depth 5
+
+Invoke-RestMethod `
+  -Uri "http://127.0.0.1:5173/api/handouts" `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body $body
+```
+
+JavaScript：
+
+```js
+const response = await fetch("http://127.0.0.1:5173/api/handouts", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    settings: {
+      title: "數學練習",
+      studentName: "小明",
+      pageCount: 1,
+      rowCount: 4
+    },
+    items: [
+      {
+        index: 0,
+        type: "text",
+        value: "計算：1 + 1 = ?",
+        fontScale: 120
+      }
+    ]
+  })
+});
+
+const data = await response.json();
+console.log(data);
+```
+
+## 區網呼叫
+
+預設只允許同一台電腦使用 `127.0.0.1` 呼叫。如果要讓同一個區網的其他電腦呼叫，可以用：
+
+```powershell
+$env:HOST="0.0.0.0"
+npm start
+```
+
+然後用這台電腦的區網 IP 連線，例如：
+
+```text
+http://192.168.1.10:5173/
+```
+
+## 線上版本
+
+GitHub Pages：
+
+```text
+https://panggihsieh.github.io/handout/
+```
+
+注意：GitHub Pages 只能提供靜態前端頁面；API server 需要在本機或其他 Node.js 主機上執行。
