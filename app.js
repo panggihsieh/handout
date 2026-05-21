@@ -7,7 +7,7 @@ function getTodayLocalDateValue() {
 }
 
 const DEFAULT_SETTINGS = {
-  title: "梅山鄉大南國小",
+  title: "數學素養練習單",
   className: "",
   studentName: "",
   date: getTodayLocalDateValue(),
@@ -37,6 +37,8 @@ const rowCountInput = document.querySelector("#rowCountInput");
 const signatureToggle = document.querySelector("#signatureToggle");
 const resetButton = document.querySelector("#resetButton");
 const printButton = document.querySelector("#printButton");
+const fontScaleDownButton = document.querySelector("#fontScaleDownButton");
+const fontScaleUpButton = document.querySelector("#fontScaleUpButton");
 const pagesRoot = document.querySelector("#pages");
 const pageTemplate = document.querySelector("#pageTemplate");
 const cellTemplate = document.querySelector("#cellTemplate");
@@ -114,6 +116,7 @@ function applySettings(settings) {
   startNumberInput.value = settings.startNumber;
   pageCountInput.value = settings.pageCount;
   rowCountInput.value = settings.rowCount;
+  currentFontScale = clampNumber(settings.fontScale, 70, 180, DEFAULT_SETTINGS.fontScale);
   updateSignatureVisibility(settings.showSignature);
 }
 
@@ -127,7 +130,7 @@ function collectSettings() {
     pageCount: clampNumber(pageCountInput.value, 1, 50, DEFAULT_SETTINGS.pageCount),
     columnCount: 2,
     rowCount: clampNumber(rowCountInput.value, 1, 12, DEFAULT_SETTINGS.rowCount),
-    fontScale: DEFAULT_SETTINGS.fontScale,
+    fontScale: currentFontScale,
     showSignature: getSignatureVisible(),
   };
 }
@@ -234,7 +237,7 @@ function fitQuestionText(container, textBlock, fontScale = DEFAULT_SETTINGS.font
 }
 
 function getCellFontScale(cellIndex) {
-  return cellFontScales.get(cellIndex) ?? DEFAULT_SETTINGS.fontScale;
+  return cellFontScales.get(cellIndex) ?? currentFontScale;
 }
 
 function updateCellFontScale(cellIndex, delta) {
@@ -273,7 +276,7 @@ function renderCellContent(container, pane, item, cellIndex = null) {
   if (item.type === "image") {
     const image = document.createElement("img");
     image.className = "problem-image";
-    image.alt = "憿??";
+    image.alt = "題目圖片";
     image.src = item.value;
     container.appendChild(image);
     return;
@@ -336,7 +339,9 @@ function setCellItem(cellIndex, item) {
         : getCellFontScale(cellIndex),
   };
 
-  cellFontScales.set(cellIndex, normalizedItem.fontScale);
+  if (item.fontScale !== undefined) {
+    cellFontScales.set(cellIndex, normalizedItem.fontScale);
+  }
 
   cellItems.set(cellIndex, normalizedItem);
 
@@ -584,6 +589,19 @@ resetButton.addEventListener("click", () => {
 printButton.addEventListener("click", () => {
   window.print();
 });
+
+if (fontScaleDownButton && fontScaleUpButton) {
+  fontScaleDownButton.addEventListener("click", () => {
+    currentFontScale = clampNumber(currentFontScale - 5, 70, 180, DEFAULT_SETTINGS.fontScale);
+    saveSettings(collectSettings());
+    refreshQuestionTextSizing();
+  });
+  fontScaleUpButton.addEventListener("click", () => {
+    currentFontScale = clampNumber(currentFontScale + 5, 70, 180, DEFAULT_SETTINGS.fontScale);
+    saveSettings(collectSettings());
+    refreshQuestionTextSizing();
+  });
+}
 
 document.addEventListener("paste", async (event) => {
   if (event.defaultPrevented) {
