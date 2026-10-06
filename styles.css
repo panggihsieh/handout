@@ -463,6 +463,10 @@ h1 {
   visibility: hidden;
 }
 
+.pages.hide-answers .work-answer-toolbar {
+  display: none;
+}
+
 .cell-toolbar {
   position: absolute;
   top: 10px;
