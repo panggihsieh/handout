@@ -403,22 +403,26 @@ h1 {
 
 .work-pane-number {
   position: absolute;
-  top: 10px;
-  left: 18px;
+  top: -8px;
+  left: 5px;
   z-index: 2;
-  min-width: 31.5px;
-  padding: 4.5px 7.5px;
+  display: grid;
+  place-items: center;
+  min-width: 18px;
+  min-height: 18px;
+  padding: 2px 3px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.92);
   border: 1px solid rgba(154, 52, 18, 0.18);
   color: var(--accent-deep);
-  font-size: 0.75rem;
+  font-size: 0.5rem;
   font-weight: 800;
+  line-height: 1;
   text-align: center;
 }
 
 .work-pane-title {
-  padding: 4px 10px 8px 70px;
+  padding: 4px 10px 8px 24px;
   color: var(--accent-deep);
   font-size: 0.69rem;
   font-weight: 800;
@@ -683,16 +687,21 @@ h1 {
 
 .cell-number {
   position: absolute;
-  top: 10px;
-  left: 0;
+  top: -8px;
+  left: -6px;
   z-index: 3;
-  min-width: 42px;
-  padding: 6px 10px;
+  display: grid;
+  place-items: center;
+  min-width: 20px;
+  min-height: 20px;
+  padding: 2px 4px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.92);
   border: 1px solid rgba(154, 52, 18, 0.18);
   color: var(--accent-deep);
+  font-size: 0.55rem;
   font-weight: 800;
+  line-height: 1;
 }
 
 .cell-guides {
@@ -896,7 +905,7 @@ h1 {
     align-items: flex-start;
     margin-top: 0 !important;
     padding-top: 0 !important;
-    padding-left: 52px;
+    padding-left: 24px;
   }
 
   .question-pane.has-question .problem-text {
