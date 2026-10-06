@@ -17,11 +17,13 @@ const DEFAULT_SETTINGS = {
   rowCount: 4,
   fontScale: 120,
   showSignature: true,
+  showAnswers: false,
 };
 
 
 
 const cellItems = new Map();
+const cellAnswers = new Map();
 const cellFontScales = new Map();
 const cellBindings = new Map();
 let activeCellIndex = null;
@@ -35,6 +37,7 @@ const startNumberInput = document.querySelector("#startNumberInput");
 const pageCountInput = document.querySelector("#pageCountInput");
 const rowCountInput = document.querySelector("#rowCountInput");
 const signatureToggle = document.querySelector("#signatureToggle");
+const answerToggle = document.querySelector("#answerToggle");
 const resetButton = document.querySelector("#resetButton");
 const printButton = document.querySelector("#printButton");
 const fontScaleDownButton = document.querySelector("#fontScaleDownButton");
@@ -86,6 +89,10 @@ function getSignatureVisible() {
   return signatureToggle.getAttribute("aria-pressed") === "true";
 }
 
+function getAnswersVisible() {
+  return answerToggle.getAttribute("aria-pressed") === "true";
+}
+
 function loadSettings() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -118,6 +125,7 @@ function applySettings(settings) {
   rowCountInput.value = settings.rowCount;
   currentFontScale = clampNumber(settings.fontScale, 70, 180, DEFAULT_SETTINGS.fontScale);
   updateSignatureVisibility(settings.showSignature);
+  updateAnswerVisibility(settings.showAnswers);
 }
 
 function collectSettings() {
@@ -132,6 +140,7 @@ function collectSettings() {
     rowCount: clampNumber(rowCountInput.value, 1, 12, DEFAULT_SETTINGS.rowCount),
     fontScale: currentFontScale,
     showSignature: getSignatureVisible(),
+    showAnswers: getAnswersVisible(),
   };
 }
 
@@ -140,6 +149,16 @@ function updateSignatureVisibility(showSignature) {
   pagesRoot.classList.toggle("hide-signature", !showSignature);
   signatureToggle.textContent = showSignature ? "on" : "off";
   signatureToggle.setAttribute("aria-pressed", String(showSignature));
+}
+
+function updateAnswerVisibility(showAnswers) {
+  if (!showAnswers && document.activeElement?.matches(".work-answer")) {
+    document.activeElement.blur();
+  }
+  pagesRoot.classList.toggle("show-answers", showAnswers);
+  pagesRoot.classList.toggle("hide-answers", !showAnswers);
+  answerToggle.textContent = showAnswers ? "顯示" : "隱藏";
+  answerToggle.setAttribute("aria-pressed", String(showAnswers));
 }
 
 function getPlainTextFromClipboardData(clipboardData) {
@@ -398,6 +417,7 @@ async function handlePasteForCell(cellIndex, event) {
 function bindCell(cell, cellIndex) {
   const pane = cell.querySelector(".question-pane");
   const content = cell.querySelector(".cell-content");
+  const answer = cell.querySelector(".work-answer");
   const imagePasteButton = cell.querySelector(".cell-image-paste-button");
   const textPasteButton = cell.querySelector(".cell-text-paste-button");
   const fontDecreaseButton = cell.querySelector(".cell-font-decrease-button");
@@ -412,6 +432,17 @@ function bindCell(cell, cellIndex) {
   pasteInput.setAttribute("autocomplete", "off");
   pasteInput.setAttribute("spellcheck", "false");
   pane.appendChild(pasteInput);
+  answer.setAttribute("aria-label", `第 ${cell.querySelector(".work-pane-number").textContent} 題解答`);
+  answer.textContent = cellAnswers.get(cellIndex) ?? "";
+  answer.addEventListener("input", () => {
+    const value = answer.innerText;
+    if (value.trim()) {
+      cellAnswers.set(cellIndex, value);
+    } else {
+      cellAnswers.delete(cellIndex);
+    }
+  });
+  answer.addEventListener("paste", (event) => event.stopPropagation());
 
   cellBindings.set(cellIndex, {
     pane,
@@ -520,6 +551,7 @@ function renderPages() {
   cellBindings.clear();
   pagesRoot.className = "pages";
   updateSignatureVisibility(settings.showSignature);
+  updateAnswerVisibility(settings.showAnswers);
   saveSettings(settings);
 
   for (let pageIndex = 0; pageIndex < settings.pageCount; pageIndex += 1) {
@@ -577,9 +609,15 @@ signatureToggle.addEventListener("click", () => {
   renderPages();
 });
 
+answerToggle.addEventListener("click", () => {
+  updateAnswerVisibility(!getAnswersVisible());
+  saveSettings(collectSettings());
+});
+
 resetButton.addEventListener("click", () => {
   localStorage.removeItem(STORAGE_KEY);
   cellItems.clear();
+  cellAnswers.clear();
   cellFontScales.clear();
   activeCellIndex = null;
   applySettings({ ...DEFAULT_SETTINGS });
