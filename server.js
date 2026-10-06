@@ -132,7 +132,7 @@ function buildHandout(payload = {}) {
   }
 
   return {
-    version: "2.0",
+    version: "3.0",
     settings,
     summary: {
       pageCount: settings.pageCount,
@@ -285,7 +285,7 @@ async function handleApi(request, response, url) {
   }
 
   if (request.method === "GET" && url.pathname === "/api/health") {
-    sendJson(response, 200, { ok: true, name: "handout-api", version: "2.0" });
+    sendJson(response, 200, { ok: true, name: "handout-api", version: "3.0" });
     return;
   }
 
