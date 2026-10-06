@@ -420,6 +420,10 @@ function setCellAnswer(cellIndex, item) {
     renderAnswerContent(binding.answerContent, answer);
     binding.answerClearButton.hidden = false;
   }
+  if (!getAnswersVisible()) {
+    updateAnswerVisibility(true);
+    saveSettings(collectSettings());
+  }
   return true;
 }
 

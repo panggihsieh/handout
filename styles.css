@@ -459,7 +459,7 @@ h1 {
   object-fit: contain;
 }
 
-.pages.hide-answers .work-pane-body {
+.pages.hide-answers .work-answer-content {
   visibility: hidden;
 }
 
