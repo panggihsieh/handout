@@ -879,10 +879,6 @@ h1 {
     display: none;
   }
 
-  .cell-number {
-    display: none;
-  }
-
   .work-answer-toolbar {
     display: none;
   }
@@ -900,6 +896,7 @@ h1 {
     align-items: flex-start;
     margin-top: 0 !important;
     padding-top: 0 !important;
+    padding-left: 52px;
   }
 
   .question-pane.has-question .problem-text {
