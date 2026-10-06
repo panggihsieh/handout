@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Latex數學-圖文練習簿</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
-  <link rel="stylesheet" href="styles.css?v=20261006-answers">
+  <link rel="stylesheet" href="styles.css?v=20261006-answer-paste">
 </head>
 <body>
   <div class="app-shell">
@@ -73,7 +73,7 @@
 
       <div class="field field-toggle">
         <span>計算程序區解答</span>
-        <button id="answerToggle" class="toggle-button" type="button" aria-pressed="false">隱藏</button>
+        <button id="answerToggle" class="toggle-button" type="button" aria-pressed="false">學生版：隱藏</button>
       </div>
 
       <div class="field field-wide helper-card">
@@ -136,7 +136,18 @@
           <div class="work-pane-number"></div>
           <div class="work-pane-title">計算程序區</div>
           <div class="work-pane-body">
-            <div class="work-answer" contenteditable="plaintext-only" role="textbox" aria-multiline="true" data-placeholder="點此輸入解答"></div>
+            <div class="work-answer-toolbar">
+              <button class="answer-image-paste-button" type="button">
+                <span class="button-icon button-icon-image" aria-hidden="true"></span>
+                <span>插入截圖</span>
+              </button>
+              <button class="answer-text-paste-button" type="button">
+                <span class="button-icon button-icon-text" aria-hidden="true"></span>
+                <span>貼上文字</span>
+              </button>
+              <button class="answer-clear-button" type="button">清除</button>
+            </div>
+            <div class="work-answer-content"></div>
           </div>
         </section>
       </div>
@@ -147,6 +158,6 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
-  <script src="app.js?v=20261006-answers"></script>
+  <script src="app.js?v=20261006-answer-paste"></script>
 </body>
 </html>

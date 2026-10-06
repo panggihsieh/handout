@@ -152,12 +152,16 @@ function updateSignatureVisibility(showSignature) {
 }
 
 function updateAnswerVisibility(showAnswers) {
-  if (!showAnswers && document.activeElement?.matches(".work-answer")) {
+  if (!showAnswers && document.activeElement?.closest(".work-pane-body")) {
     document.activeElement.blur();
   }
   pagesRoot.classList.toggle("show-answers", showAnswers);
   pagesRoot.classList.toggle("hide-answers", !showAnswers);
-  answerToggle.textContent = showAnswers ? "顯示" : "隱藏";
+  answerToggle.textContent = showAnswers ? "教師版：顯示" : "學生版：隱藏";
+  answerToggle.setAttribute(
+    "aria-label",
+    showAnswers ? "計算程序區解答目前顯示，按下切換為學生版" : "計算程序區解答目前隱藏，按下切換為教師版",
+  );
   answerToggle.setAttribute("aria-pressed", String(showAnswers));
 }
 
@@ -309,21 +313,42 @@ function renderCellContent(container, pane, item, cellIndex = null) {
   requestAnimationFrame(() => fitQuestionText(container, textBlock, textScale));
 }
 
+function renderAnswerContent(container, item) {
+  container.replaceChildren();
+
+  if (!item?.value) {
+    return;
+  }
+
+  if (item.type === "image") {
+    const image = document.createElement("img");
+    image.className = "work-answer-image";
+    image.alt = "解答圖片";
+    image.src = item.value;
+    container.appendChild(image);
+    return;
+  }
+
+  const textBlock = document.createElement("div");
+  textBlock.className = "problem-text work-answer-text";
+  renderMathMarkdown(textBlock, item.value);
+  container.appendChild(textBlock);
+  requestAnimationFrame(() => fitQuestionText(container, textBlock, currentFontScale));
+}
+
 function refreshQuestionTextSizing() {
-  cellBindings.forEach(({ content, pane }, cellIndex) => {
+  cellBindings.forEach(({ content, pane, answerContent }, cellIndex) => {
     const item = cellItems.get(cellIndex);
-
-    if (!item || item.type !== "text") {
-      return;
-    }
-
     const textBlock = content.querySelector(".problem-text");
 
-    if (!textBlock || !pane.classList.contains("has-question")) {
-      return;
+    if (item?.type === "text" && textBlock && pane.classList.contains("has-question")) {
+      fitQuestionText(content, textBlock, item.fontScale ?? getCellFontScale(cellIndex));
     }
 
-    fitQuestionText(content, textBlock, item.fontScale ?? getCellFontScale(cellIndex));
+    const answerText = answerContent.querySelector(".work-answer-text");
+    if (answerText) {
+      fitQuestionText(answerContent, answerText, currentFontScale);
+    }
   });
 }
 
@@ -382,6 +407,31 @@ function applyTextToCell(cellIndex, text) {
   return setCellItem(cellIndex, { type: "text", value: text, fontScale: getCellFontScale(cellIndex) });
 }
 
+function setCellAnswer(cellIndex, item) {
+  const value = item?.value?.trim() ?? "";
+  if (!value) {
+    return false;
+  }
+
+  const answer = { type: item.type, value };
+  cellAnswers.set(cellIndex, answer);
+  const binding = cellBindings.get(cellIndex);
+  if (binding) {
+    renderAnswerContent(binding.answerContent, answer);
+    binding.answerClearButton.hidden = false;
+  }
+  return true;
+}
+
+async function applyImageToAnswer(cellIndex, imageBlob) {
+  const imageUrl = await readBlobAsDataUrl(imageBlob);
+  return setCellAnswer(cellIndex, { type: "image", value: imageUrl });
+}
+
+function applyTextToAnswer(cellIndex, text) {
+  return setCellAnswer(cellIndex, { type: "text", value: text });
+}
+
 async function handlePasteForCell(cellIndex, event) {
   const imageFile = getImageFileFromClipboardData(event.clipboardData);
   const text = getPlainTextFromClipboardData(event.clipboardData);
@@ -414,16 +464,43 @@ async function handlePasteForCell(cellIndex, event) {
   return false;
 }
 
+async function handlePasteForAnswer(cellIndex, event, pasteMode) {
+  event.stopPropagation();
+  const imageFile = getImageFileFromClipboardData(event.clipboardData);
+  const text = getPlainTextFromClipboardData(event.clipboardData);
+
+  if (!imageFile && !text) {
+    return false;
+  }
+
+  event.preventDefault();
+  if (imageFile && pasteMode !== "text") {
+    await applyImageToAnswer(cellIndex, imageFile);
+  } else if (text) {
+    applyTextToAnswer(cellIndex, text);
+  } else if (imageFile) {
+    await applyImageToAnswer(cellIndex, imageFile);
+  }
+  return true;
+}
+
 function bindCell(cell, cellIndex) {
   const pane = cell.querySelector(".question-pane");
   const content = cell.querySelector(".cell-content");
-  const answer = cell.querySelector(".work-answer");
+  const answerPane = cell.querySelector(".work-pane-body");
+  const answerContent = cell.querySelector(".work-answer-content");
+  const answerImagePasteButton = cell.querySelector(".answer-image-paste-button");
+  const answerTextPasteButton = cell.querySelector(".answer-text-paste-button");
+  const answerClearButton = cell.querySelector(".answer-clear-button");
   const imagePasteButton = cell.querySelector(".cell-image-paste-button");
   const textPasteButton = cell.querySelector(".cell-text-paste-button");
   const fontDecreaseButton = cell.querySelector(".cell-font-decrease-button");
   const fontIncreaseButton = cell.querySelector(".cell-font-increase-button");
   const clearButton = cell.querySelector(".cell-clear-button");
   const pasteInput = document.createElement("textarea");
+  const answerPasteInput = document.createElement("textarea");
+  let answerPasteMode = null;
+  const answerNumber = cell.querySelector(".work-pane-number").textContent;
 
   pane.tabIndex = 0;
   pane.setAttribute("title", "先點按鈕，再按 Ctrl+V 貼上圖片或文字");
@@ -432,21 +509,20 @@ function bindCell(cell, cellIndex) {
   pasteInput.setAttribute("autocomplete", "off");
   pasteInput.setAttribute("spellcheck", "false");
   pane.appendChild(pasteInput);
-  answer.setAttribute("aria-label", `第 ${cell.querySelector(".work-pane-number").textContent} 題解答`);
-  answer.textContent = cellAnswers.get(cellIndex) ?? "";
-  answer.addEventListener("input", () => {
-    const value = answer.innerText;
-    if (value.trim()) {
-      cellAnswers.set(cellIndex, value);
-    } else {
-      cellAnswers.delete(cellIndex);
-    }
-  });
-  answer.addEventListener("paste", (event) => event.stopPropagation());
+  answerPane.tabIndex = 0;
+  answerPane.setAttribute("title", "先點按鈕，再按 Ctrl+V 貼上解答");
+  answerImagePasteButton.setAttribute("aria-label", `第 ${answerNumber} 題解答插入截圖`);
+  answerTextPasteButton.setAttribute("aria-label", `第 ${answerNumber} 題解答貼上文字`);
+  answerClearButton.setAttribute("aria-label", `清除第 ${answerNumber} 題解答`);
+  answerPasteInput.className = "cell-paste-input";
+  answerPasteInput.setAttribute("aria-label", "解答貼上輸入框");
+  answerPane.appendChild(answerPasteInput);
 
   cellBindings.set(cellIndex, {
     pane,
     content,
+    answerContent,
+    answerClearButton,
     imagePasteButton,
     textPasteButton,
     fontDecreaseButton,
@@ -456,7 +532,9 @@ function bindCell(cell, cellIndex) {
   });
 
   renderCellContent(content, pane, cellItems.get(cellIndex), cellIndex);
+  renderAnswerContent(answerContent, cellAnswers.get(cellIndex));
   clearButton.hidden = !cellItems.has(cellIndex);
+  answerClearButton.hidden = !cellAnswers.has(cellIndex);
   updateActiveState();
 
   const activate = () => {
@@ -475,6 +553,60 @@ function bindCell(cell, cellIndex) {
     pasteInput.value = "";
     await handlePasteForCell(cellIndex, event);
     pasteInput.value = "";
+  });
+
+  answerPane.addEventListener("click", (event) => {
+    event.stopPropagation();
+    setActiveCell(null, null);
+  });
+  answerPane.addEventListener("paste", async (event) => {
+    await handlePasteForAnswer(cellIndex, event, answerPasteMode);
+    answerPasteMode = null;
+    answerPasteInput.value = "";
+  });
+
+  answerImagePasteButton.addEventListener("click", async () => {
+    answerPasteMode = "image";
+    try {
+      const items = await navigator.clipboard.read();
+      for (const item of items) {
+        for (const type of item.types) {
+          if (type.startsWith("image/")) {
+            await applyImageToAnswer(cellIndex, await item.getType(type));
+            answerPasteMode = null;
+            return;
+          }
+        }
+      }
+      alert("剪貼簿中沒有圖片！");
+    } catch (error) {
+      console.error("Failed to read answer image:", error);
+      answerPasteInput.focus();
+      alert("無法直接讀取剪貼簿。請按 Ctrl+V 貼上解答圖片。");
+    }
+  });
+
+  answerTextPasteButton.addEventListener("click", async () => {
+    answerPasteMode = "text";
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) {
+        applyTextToAnswer(cellIndex, text);
+        answerPasteMode = null;
+      } else {
+        alert("剪貼簿中沒有文字！");
+      }
+    } catch (error) {
+      console.error("Failed to read answer text:", error);
+      answerPasteInput.focus();
+      alert("無法直接讀取剪貼簿。請按 Ctrl+V 貼上解答文字。");
+    }
+  });
+
+  answerClearButton.addEventListener("click", () => {
+    cellAnswers.delete(cellIndex);
+    renderAnswerContent(answerContent, null);
+    answerClearButton.hidden = true;
   });
 
   imagePasteButton.addEventListener("click", async () => {
