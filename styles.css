@@ -368,7 +368,20 @@ h1 {
 }
 
 .question-pane.has-image {
+  display: flex;
+  flex-direction: column;
   padding: 0;
+}
+
+.question-pane.has-image .cell-toolbar {
+  position: static;
+  max-width: calc(100% - 28px);
+  margin-left: 28px;
+  padding-bottom: 6px;
+}
+
+.question-pane.has-image .cell-font-stepper {
+  display: none;
 }
 
 .question-pane.is-paste-target {
@@ -626,6 +639,9 @@ h1 {
 }
 
 .question-pane.has-image .cell-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
   margin-top: 0;
 }
 
@@ -852,6 +868,39 @@ h1 {
     position: static;
     padding: 0 0 10px;
     max-width: none;
+  }
+
+  .question-pane.has-image .cell-toolbar {
+    max-width: 100%;
+    margin-left: 0;
+    padding: 24px 0 4px;
+    gap: 3px;
+    flex-wrap: nowrap;
+  }
+
+  .question-pane.has-image .cell-image-paste-button,
+  .question-pane.has-image .cell-text-paste-button,
+  .question-pane.has-image .cell-clear-button {
+    width: 28px;
+    height: 28px;
+    flex: 0 0 28px;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .question-pane.has-image .cell-image-paste-button span:last-child,
+  .question-pane.has-image .cell-text-paste-button span:last-child {
+    display: none;
+  }
+
+  .question-pane.has-image .cell-clear-button {
+    font-size: 0;
+  }
+
+  .question-pane.has-image .cell-clear-button::before {
+    content: "\00d7";
+    font-size: 18px;
+    line-height: 1;
   }
 
   .cell-number {
