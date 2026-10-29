@@ -78,7 +78,12 @@ API 串接可使用固定 JSON Schema 保存題目來源、題文、公式、圖
 
 ## 可重用 skill
 
-本次已建立本機 skill `exam-to-fill-handout`，位置為 `C:/Users/hsieh/.codex/skills/exam-to-fill-handout/SKILL.md`，已通過 skill 格式驗證。此路徑僅適用目前電腦；skill 本體尚未隨此專案發布。
+本次已建立 skill `exam-to-fill-handout`，已通過 skill 格式驗證，並隨本分支保存：
+
+- [skill 原始檔](skills/exam-to-fill-handout/SKILL.md)
+- [下載 ZIP](exam-to-fill-handout.zip)（GitHub 檔案頁選擇 Download raw）
+
+解壓縮後將 `exam-to-fill-handout` 資料夾放入使用者的 Codex skills 目錄；目前電腦的位置為 `C:/Users/hsieh/.codex/skills/exam-to-fill-handout/`。
 
 使用範例：
 
