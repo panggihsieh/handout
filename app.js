@@ -203,7 +203,14 @@ function escapeHtml(value) {
 }
 
 function renderMathMarkdown(container, sourceText) {
-  const markdownSource = sourceText.trim();
+  // Some copied answers escape the delimiters twice. Normalize complete pairs
+  // only; TeX's double-backslash line breaks inside formulas must stay intact.
+  const markdownSource = sourceText.trim().replace(
+    /\\\\\(([\s\S]*?)\\\\\)|\\\\\[([\s\S]*?)\\\\\]/g,
+    (_, inlineMath, displayMath) => inlineMath !== undefined
+      ? `\\(${inlineMath}\\)`
+      : `\\[${displayMath}\\]`,
+  );
 
   if (!markdownSource) {
     container.innerHTML = "";
