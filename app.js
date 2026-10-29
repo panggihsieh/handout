@@ -217,11 +217,25 @@ function renderMathMarkdown(container, sourceText) {
     });
   }
 
+  // Markdown unescapes \( and \[ and can interpret underscores inside TeX.
+  // Keep complete math spans intact until Markdown has finished parsing.
+  const mathSpans = [];
+  let mathTokenPrefix = "HANDOUTMATH";
+  while (markdownSource.includes(mathTokenPrefix)) {
+    mathTokenPrefix += "X";
+  }
+  const protectedSource = markdownSource.replace(
+    /\$\$[\s\S]+?\$\$|\\\[[\s\S]+?\\\]|\\\([\s\S]+?\\\)|(?<!\\)\$(?!\$)(?:\\[\s\S]|[^$\\])+?\$/g,
+    (math) => `${mathTokenPrefix}${mathSpans.push(math) - 1}END`,
+  );
   const html = window.marked?.parse
-    ? window.marked.parse(markdownSource)
-    : `<p>${escapeHtml(markdownSource)}</p>`;
+    ? window.marked.parse(protectedSource)
+    : `<p>${escapeHtml(protectedSource)}</p>`;
 
-  container.innerHTML = html;
+  container.innerHTML = html.replace(
+    new RegExp(`${mathTokenPrefix}(\\d+)END`, "g"),
+    (_, index) => escapeHtml(mathSpans[Number(index)]),
+  );
 
   if (window.renderMathInElement) {
     window.renderMathInElement(container, {
