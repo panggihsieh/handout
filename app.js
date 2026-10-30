@@ -203,14 +203,7 @@ function escapeHtml(value) {
 }
 
 function renderMathMarkdown(container, sourceText) {
-  // Some copied answers escape the delimiters twice. Normalize complete pairs
-  // only; TeX's double-backslash line breaks inside formulas must stay intact.
-  const markdownSource = sourceText.trim().replace(
-    /\\\\\(([\s\S]*?)\\\\\)|\\\\\[([\s\S]*?)\\\\\]/g,
-    (_, inlineMath, displayMath) => inlineMath !== undefined
-      ? `\\(${inlineMath}\\)`
-      : `\\[${displayMath}\\]`,
-  );
+  const markdownSource = sourceText.trim();
 
   if (!markdownSource) {
     container.innerHTML = "";
@@ -224,25 +217,11 @@ function renderMathMarkdown(container, sourceText) {
     });
   }
 
-  // Markdown unescapes \( and \[ and can interpret underscores inside TeX.
-  // Keep complete math spans intact until Markdown has finished parsing.
-  const mathSpans = [];
-  let mathTokenPrefix = "HANDOUTMATH";
-  while (markdownSource.includes(mathTokenPrefix)) {
-    mathTokenPrefix += "X";
-  }
-  const protectedSource = markdownSource.replace(
-    /\$\$[\s\S]+?\$\$|\\\[[\s\S]+?\\\]|\\\([\s\S]+?\\\)|(?<!\\)\$(?!\$)(?:\\[\s\S]|[^$\\])+?\$/g,
-    (math) => `${mathTokenPrefix}${mathSpans.push(math) - 1}END`,
-  );
   const html = window.marked?.parse
-    ? window.marked.parse(protectedSource)
-    : `<p>${escapeHtml(protectedSource)}</p>`;
+    ? window.marked.parse(markdownSource)
+    : `<p>${escapeHtml(markdownSource)}</p>`;
 
-  container.innerHTML = html.replace(
-    new RegExp(`${mathTokenPrefix}(\\d+)END`, "g"),
-    (_, index) => escapeHtml(mathSpans[Number(index)]),
-  );
+  container.innerHTML = html;
 
   if (window.renderMathInElement) {
     window.renderMathInElement(container, {
