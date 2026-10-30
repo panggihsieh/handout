@@ -26,9 +26,6 @@ const cellItems = new Map();
 const cellAnswers = new Map();
 const cellFontScales = new Map();
 const cellBindings = new Map();
-const IMAGE_SCALE_MIN = 50;
-const IMAGE_SCALE_MAX = 200;
-const IMAGE_SCALE_STEP = 10;
 let activeCellIndex = null;
 let activePasteMode = null;
 
@@ -287,27 +284,6 @@ function updateCellFontScale(cellIndex, delta) {
   }
 }
 
-function updateImageScaleControls(cellIndex) {
-  const binding = cellBindings.get(cellIndex);
-  if (!binding) return;
-
-  const scale = cellItems.get(cellIndex)?.imageScale ?? 100;
-  binding.imageDecreaseButton.disabled = scale <= IMAGE_SCALE_MIN;
-  binding.imageIncreaseButton.disabled = scale >= IMAGE_SCALE_MAX;
-  binding.imageDecreaseButton.title = `縮小圖片（目前 ${scale}%）`;
-  binding.imageIncreaseButton.title = `放大圖片（目前 ${scale}%）`;
-}
-
-function updateCellImageScale(cellIndex, delta) {
-  const item = cellItems.get(cellIndex);
-  if (item?.type !== "image") return;
-
-  item.imageScale = clampNumber((item.imageScale ?? 100) + delta, IMAGE_SCALE_MIN, IMAGE_SCALE_MAX, 100);
-  const image = cellBindings.get(cellIndex)?.content.querySelector(".problem-image");
-  if (image) image.style.transform = `scale(${item.imageScale / 100})`;
-  updateImageScaleControls(cellIndex);
-}
-
 function renderCellContent(container, pane, item, cellIndex = null) {
   container.replaceChildren();
 
@@ -325,7 +301,6 @@ function renderCellContent(container, pane, item, cellIndex = null) {
     image.className = "problem-image";
     image.alt = "題目圖片";
     image.src = item.value;
-    image.style.transform = `scale(${(item.imageScale ?? 100) / 100})`;
     container.appendChild(image);
     return;
   }
@@ -406,7 +381,6 @@ function setCellItem(cellIndex, item) {
       item.type === "text"
         ? clampNumber(item.fontScale ?? getCellFontScale(cellIndex), 70, 180, DEFAULT_SETTINGS.fontScale)
         : getCellFontScale(cellIndex),
-    imageScale: item.type === "image" ? clampNumber(item.imageScale ?? 100, IMAGE_SCALE_MIN, IMAGE_SCALE_MAX, 100) : undefined,
   };
 
   if (item.fontScale !== undefined) {
@@ -419,7 +393,6 @@ function setCellItem(cellIndex, item) {
   if (binding) {
     renderCellContent(binding.content, binding.pane, normalizedItem, cellIndex);
     binding.clearButton.hidden = false;
-    updateImageScaleControls(cellIndex);
   }
 
   return true;
@@ -527,8 +500,6 @@ function bindCell(cell, cellIndex) {
   const textPasteButton = cell.querySelector(".cell-text-paste-button");
   const fontDecreaseButton = cell.querySelector(".cell-font-decrease-button");
   const fontIncreaseButton = cell.querySelector(".cell-font-increase-button");
-  const imageDecreaseButton = cell.querySelector(".cell-image-decrease-button");
-  const imageIncreaseButton = cell.querySelector(".cell-image-increase-button");
   const clearButton = cell.querySelector(".cell-clear-button");
   const pasteInput = document.createElement("textarea");
   const answerPasteInput = document.createElement("textarea");
@@ -560,8 +531,6 @@ function bindCell(cell, cellIndex) {
     textPasteButton,
     fontDecreaseButton,
     fontIncreaseButton,
-    imageDecreaseButton,
-    imageIncreaseButton,
     clearButton,
     pasteInput,
   });
@@ -569,7 +538,6 @@ function bindCell(cell, cellIndex) {
   renderCellContent(content, pane, cellItems.get(cellIndex), cellIndex);
   renderAnswerContent(answerContent, cellAnswers.get(cellIndex));
   clearButton.hidden = !cellItems.has(cellIndex);
-  updateImageScaleControls(cellIndex);
   answerClearButton.hidden = !cellAnswers.has(cellIndex);
   updateActiveState();
 
@@ -694,15 +662,11 @@ function bindCell(cell, cellIndex) {
     updateCellFontScale(cellIndex, 5);
   });
 
-  imageDecreaseButton.addEventListener("click", () => updateCellImageScale(cellIndex, -IMAGE_SCALE_STEP));
-  imageIncreaseButton.addEventListener("click", () => updateCellImageScale(cellIndex, IMAGE_SCALE_STEP));
-
   clearButton.addEventListener("click", () => {
     cellItems.delete(cellIndex);
     cellFontScales.delete(cellIndex);
     renderCellContent(content, pane, null, cellIndex);
     clearButton.hidden = true;
-    updateImageScaleControls(cellIndex);
   });
 }
 

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Latex數學-圖文練習簿</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
-  <link rel="stylesheet" href="styles.css?v=20261027-image-size-controls">
+  <link rel="stylesheet" href="styles.css?v=20261027-contain-images">
 </head>
 <body>
   <div class="app-shell">
@@ -116,11 +116,11 @@
         <section class="question-pane">
           <div class="cell-number"></div>
           <div class="cell-toolbar">
-            <button class="cell-image-paste-button" type="button" aria-label="插入截圖" title="插入截圖">
+            <button class="cell-image-paste-button" type="button">
               <span class="button-icon button-icon-image" aria-hidden="true"></span>
               <span>插入截圖</span>
             </button>
-            <button class="cell-text-paste-button" type="button" aria-label="貼上文字" title="貼上文字">
+            <button class="cell-text-paste-button" type="button">
               <span class="button-icon button-icon-text" aria-hidden="true"></span>
               <span>貼上文字</span>
             </button>
@@ -128,11 +128,7 @@
               <button class="cell-font-decrease-button" type="button" aria-label="縮小題目字體">-</button>
               <button class="cell-font-increase-button" type="button" aria-label="放大題目字體">+</button>
             </div>
-            <div class="cell-image-stepper" aria-label="題目圖片大小調整">
-              <button class="cell-image-decrease-button" type="button" aria-label="縮小題目圖片" title="縮小圖片">-</button>
-              <button class="cell-image-increase-button" type="button" aria-label="放大題目圖片" title="放大圖片">+</button>
-            </div>
-            <button class="cell-clear-button" type="button" aria-label="清除題目" title="清除題目">清除</button>
+            <button class="cell-clear-button" type="button">清除</button>
           </div>
           <div class="cell-content"></div>
         </section>
@@ -162,6 +158,6 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
-  <script src="app.js?v=20261027-image-size-controls"></script>
+  <script src="app.js?v=20261006-answer-controls"></script>
 </body>
 </html>
