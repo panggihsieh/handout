@@ -19,6 +19,7 @@ const DEFAULT_SETTINGS = {
   rowCount: 4,
   fontScale: 120,
   showSignature: true,
+  twoQuestions: false,
 };
 
 const contentTypes = {
@@ -66,6 +67,7 @@ function normalizeSettings(settings = {}) {
     rowCount: clampNumber(settings.rowCount, 1, 12, DEFAULT_SETTINGS.rowCount),
     fontScale: clampNumber(settings.fontScale, 70, 180, DEFAULT_SETTINGS.fontScale),
     showSignature: settings.showSignature !== false,
+    twoQuestions: settings.twoQuestions === true,
   };
 }
 
@@ -97,7 +99,7 @@ function buildHandout(payload = {}) {
   const settings = normalizeSettings(payload.settings);
   const items = normalizeItems(payload.items);
   const itemsByIndex = new Map(items.map((item) => [item.index, item]));
-  const cellsPerPage = settings.rowCount;
+  const cellsPerPage = settings.rowCount * (settings.twoQuestions ? 2 : 1);
   const totalCells = settings.pageCount * cellsPerPage;
   const pages = [];
 
@@ -122,7 +124,7 @@ function buildHandout(payload = {}) {
     pages.push({
       index: pageIndex,
       title: settings.title,
-      layout: `單欄 / 每頁 ${cellsPerPage} 題`,
+      layout: `${settings.twoQuestions ? "雙欄" : "單欄"} / 每頁 ${cellsPerPage} 題`,
       studentName: settings.studentName || "________________",
       date: settings.date,
       signature: settings.showSignature,
@@ -208,7 +210,7 @@ function renderHandoutHtml(payload = {}) {
 
       return `<section class="page ${pageIndex > 0 ? "page-following" : ""}">
           ${header}
-          <div class="grid" style="grid-template-rows:repeat(${handout.settings.rowCount}, minmax(0, 1fr))">${cells}</div>
+          <div class="grid" style="grid-template-columns:repeat(${handout.settings.twoQuestions ? 2 : 1}, minmax(0, 1fr));grid-template-rows:repeat(${handout.settings.rowCount}, minmax(0, 1fr))">${cells}</div>
           <div class="page-meta">${escapeHtml(page.meta)}</div>
         </section>`;
     })
@@ -223,7 +225,7 @@ function renderHandoutHtml(payload = {}) {
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-  <main class="pages ${handout.settings.showSignature ? "show-signature" : "hide-signature"}">${pages}</main>
+  <main class="pages ${handout.settings.showSignature ? "show-signature" : "hide-signature"} ${handout.settings.twoQuestions ? "two-questions" : ""}">${pages}</main>
 </body>
 </html>`;
 }

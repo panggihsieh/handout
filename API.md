@@ -45,3 +45,5 @@ Example JSON body:
   ]
 }
 ```
+
+Set `settings.twoQuestions` to `true` for two numbered question cells per row (default `false`). In this mode, `items[].index` follows left-to-right, top-to-bottom order.

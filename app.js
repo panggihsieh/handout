@@ -18,6 +18,7 @@ const DEFAULT_SETTINGS = {
   fontScale: 120,
   showSignature: true,
   showAnswers: false,
+  twoQuestions: false,
 };
 
 
@@ -38,6 +39,7 @@ const pageCountInput = document.querySelector("#pageCountInput");
 const rowCountInput = document.querySelector("#rowCountInput");
 const signatureToggle = document.querySelector("#signatureToggle");
 const answerToggle = document.querySelector("#answerToggle");
+const twoQuestionToggle = document.querySelector("#twoQuestionToggle");
 const resetButton = document.querySelector("#resetButton");
 const printButton = document.querySelector("#printButton");
 const fontScaleDownButton = document.querySelector("#fontScaleDownButton");
@@ -93,6 +95,10 @@ function getAnswersVisible() {
   return answerToggle.getAttribute("aria-pressed") === "true";
 }
 
+function getTwoQuestionsEnabled() {
+  return twoQuestionToggle.getAttribute("aria-pressed") === "true";
+}
+
 function loadSettings() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -126,6 +132,7 @@ function applySettings(settings) {
   currentFontScale = clampNumber(settings.fontScale, 70, 180, DEFAULT_SETTINGS.fontScale);
   updateSignatureVisibility(settings.showSignature);
   updateAnswerVisibility(settings.showAnswers);
+  updateTwoQuestionMode(settings.twoQuestions);
 }
 
 function collectSettings() {
@@ -141,6 +148,7 @@ function collectSettings() {
     fontScale: currentFontScale,
     showSignature: getSignatureVisible(),
     showAnswers: getAnswersVisible(),
+    twoQuestions: getTwoQuestionsEnabled(),
   };
 }
 
@@ -163,6 +171,14 @@ function updateAnswerVisibility(showAnswers) {
     showAnswers ? "計算程序區解答目前顯示，按下切換為學生版" : "計算程序區解答目前隱藏，按下切換為教師版",
   );
   answerToggle.setAttribute("aria-pressed", String(showAnswers));
+}
+
+function updateTwoQuestionMode(enabled) {
+  pagesRoot.classList.toggle("two-questions", enabled);
+  twoQuestionToggle.textContent = enabled ? "on" : "off";
+  twoQuestionToggle.setAttribute("aria-pressed", String(enabled));
+  twoQuestionToggle.setAttribute("aria-label", `左右皆為題目：${enabled ? "開啟" : "關閉"}`);
+  answerToggle.closest(".answer-mode-field").hidden = enabled;
 }
 
 function getPlainTextFromClipboardData(clipboardData) {
@@ -677,10 +693,14 @@ function renderPages() {
   const displayDate = formatDisplayDate(settings.date);
   const cellsPerPage = settings.rowCount;
   const totalCells = settings.pageCount * cellsPerPage;
-  const layoutLabel = `單欄 / 每頁 ${cellsPerPage} 題`;
+  const questionsPerPage = cellsPerPage * (settings.twoQuestions ? 2 : 1);
+  const layoutLabel = `${settings.twoQuestions ? "雙欄" : "單欄"} / 每頁 ${questionsPerPage} 題`;
 
-  if (activeCellIndex !== null && activeCellIndex >= totalCells) {
-    activeCellIndex = null;
+  if (activeCellIndex !== null) {
+    const activeRow = typeof activeCellIndex === "string" ? Number(activeCellIndex.slice(6)) : activeCellIndex;
+    if (activeRow >= totalCells || (typeof activeCellIndex === "string" && !settings.twoQuestions)) {
+      activeCellIndex = null;
+    }
   }
 
   pagesRoot.replaceChildren();
@@ -688,6 +708,7 @@ function renderPages() {
   pagesRoot.className = "pages";
   updateSignatureVisibility(settings.showSignature);
   updateAnswerVisibility(settings.showAnswers);
+  updateTwoQuestionMode(settings.twoQuestions);
   saveSettings(settings);
 
   for (let pageIndex = 0; pageIndex < settings.pageCount; pageIndex += 1) {
@@ -706,7 +727,7 @@ function renderPages() {
     pageName.textContent = studentName;
     pageDate.textContent = displayDate;
     pageMeta.textContent = `第 ${pageIndex + 1} / ${settings.pageCount} 頁`;
-    grid.style.gridTemplateColumns = "repeat(1, minmax(0, 1fr))";
+    grid.style.gridTemplateColumns = `repeat(${settings.twoQuestions ? 2 : 1}, minmax(0, 1fr))`;
     grid.style.gridTemplateRows = `repeat(${settings.rowCount}, minmax(0, 1fr))`;
 
     if (pageIndex > 0) {
@@ -716,17 +737,17 @@ function renderPages() {
 
     for (let cellIndex = 0; cellIndex < cellsPerPage; cellIndex += 1) {
       const itemIndex = pageIndex * cellsPerPage + cellIndex;
-      const cellFragment = cellTemplate.content.cloneNode(true);
-      const cellElement = cellFragment.querySelector(".cell");
-      const cellNumber = cellFragment.querySelector(".cell-number");
-      const workPaneNumber = cellFragment.querySelector(".work-pane-number");
+      for (let side = 0; side < (settings.twoQuestions ? 2 : 1); side += 1) {
+        const cellFragment = cellTemplate.content.cloneNode(true);
+        const cellElement = cellFragment.querySelector(".cell");
+        const number = settings.startNumber + pageIndex * questionsPerPage + cellIndex * (settings.twoQuestions ? 2 : 1) + side;
+        const itemKey = side === 0 ? itemIndex : `right:${itemIndex}`;
 
-      cellNumber.textContent = settings.startNumber + itemIndex;
-      if (workPaneNumber) {
-        workPaneNumber.textContent = settings.startNumber + itemIndex;
+        cellFragment.querySelector(".cell-number").textContent = number;
+        cellFragment.querySelector(".work-pane-number").textContent = number;
+        bindCell(cellElement, itemKey);
+        grid.appendChild(cellFragment);
       }
-      bindCell(cellElement, itemIndex);
-      grid.appendChild(cellFragment);
     }
 
     pagesRoot.appendChild(page);
@@ -748,6 +769,13 @@ signatureToggle.addEventListener("click", () => {
 answerToggle.addEventListener("click", () => {
   updateAnswerVisibility(!getAnswersVisible());
   saveSettings(collectSettings());
+});
+
+twoQuestionToggle.addEventListener("click", () => {
+  updateTwoQuestionMode(!getTwoQuestionsEnabled());
+  activeCellIndex = null;
+  activePasteMode = null;
+  renderPages();
 });
 
 resetButton.addEventListener("click", () => {

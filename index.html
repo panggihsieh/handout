@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Latex數學-圖文練習簿</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
-  <link rel="stylesheet" href="styles.css?v=20261006-red-answers">
+  <link rel="stylesheet" href="styles.css?v=20261030-two-questions">
 </head>
 <body>
   <div class="app-shell">
     <header class="hero">
       <div>
-        <p class="version-pill">版本:第3版 Math's Scrapbook v.3.0 (師生分離版)｜最後修正：2026/10/06</p>
+        <p class="version-pill">版本:第3版 Math's Scrapbook v.3.0 (師生分離版)｜最後修正：2026/10/30</p>
         <h1>Latex數學-圖文練習簿</h1>
         <p class="subtitle">A4 直式，幾何題可逐格插入截圖，文字題可逐格貼上原始題目並正常渲染 LaTeX 與 Markdown。</p>
       </div>
@@ -72,6 +72,11 @@
       </label>
 
       <div class="field field-toggle">
+        <span>左右皆為題目</span>
+        <button id="twoQuestionToggle" class="toggle-button" type="button" aria-pressed="false">off</button>
+      </div>
+
+      <div class="field field-toggle answer-mode-field">
         <span>計算程序區解答</span>
         <button id="answerToggle" class="toggle-button" type="button" aria-pressed="false">學生版：隱藏</button>
       </div>
@@ -116,11 +121,11 @@
         <section class="question-pane">
           <div class="cell-number"></div>
           <div class="cell-toolbar">
-            <button class="cell-image-paste-button" type="button">
+            <button class="cell-image-paste-button" type="button" aria-label="插入截圖" title="插入截圖">
               <span class="button-icon button-icon-image" aria-hidden="true"></span>
               <span>插入截圖</span>
             </button>
-            <button class="cell-text-paste-button" type="button">
+            <button class="cell-text-paste-button" type="button" aria-label="貼上文字" title="貼上文字">
               <span class="button-icon button-icon-text" aria-hidden="true"></span>
               <span>貼上文字</span>
             </button>
@@ -128,7 +133,7 @@
               <button class="cell-font-decrease-button" type="button" aria-label="縮小題目字體">-</button>
               <button class="cell-font-increase-button" type="button" aria-label="放大題目字體">+</button>
             </div>
-            <button class="cell-clear-button" type="button">清除</button>
+            <button class="cell-clear-button" type="button" aria-label="清除題目" title="清除題目">清除</button>
           </div>
           <div class="cell-content"></div>
         </section>
@@ -158,6 +163,6 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
-  <script src="app.js?v=20261006-answer-controls"></script>
+  <script src="app.js?v=20261030-two-questions"></script>
 </body>
 </html>

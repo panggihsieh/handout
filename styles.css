@@ -111,6 +111,10 @@ h1 {
   display: none;
 }
 
+.answer-mode-field[hidden] {
+  display: none;
+}
+
 .field span {
   font-weight: 700;
   font-size: 0.95rem;
@@ -197,6 +201,23 @@ h1 {
   background: #edf1f4;
   color: #40505c;
   font-weight: 700;
+}
+
+#twoQuestionToggle {
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+#twoQuestionToggle[aria-pressed="true"] {
+  border-color: #287251;
+  background: #e8f5ec;
+  color: #205b41;
+}
+
+#twoQuestionToggle[aria-pressed="false"] {
+  border-color: #a6b5bf;
+  background: #edf1f4;
+  color: #40505c;
 }
 
 .secondary-button {
@@ -633,6 +654,67 @@ h1 {
   height: 100%;
 }
 
+.pages.two-questions .cell-layout {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.pages.two-questions .work-pane {
+  display: none;
+}
+
+.pages.two-questions .question-pane {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+.pages.two-questions .cell-toolbar {
+  position: static;
+  max-width: calc(100% - 18px);
+  margin-left: 18px;
+  padding-bottom: 6px;
+  gap: 3px;
+  flex-wrap: nowrap;
+}
+
+.pages.two-questions .cell-image-paste-button,
+.pages.two-questions .cell-text-paste-button,
+.pages.two-questions .cell-clear-button,
+.pages.two-questions .cell-font-decrease-button,
+.pages.two-questions .cell-font-increase-button {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  flex: 0 0 32px;
+  justify-content: center;
+}
+
+.pages.two-questions .cell-font-stepper {
+  gap: 3px;
+}
+
+.pages.two-questions .cell-image-paste-button span:last-child,
+.pages.two-questions .cell-text-paste-button span:last-child {
+  display: none;
+}
+
+.pages.two-questions .cell-clear-button {
+  font-size: 0;
+}
+
+.pages.two-questions .cell-clear-button::before {
+  content: "\00d7";
+  font-size: 18px;
+  line-height: 1;
+}
+
+.pages.two-questions .cell-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
+  margin-top: 0;
+}
+
 .problem-text {
   width: 100%;
   height: 100%;
@@ -684,6 +766,10 @@ h1 {
   object-fit: cover;
   object-position: center;
   display: block;
+}
+
+.pages.two-questions .problem-image {
+  object-fit: contain;
 }
 
 .cell-number {
@@ -861,6 +947,16 @@ h1 {
   .cell-layout {
     inset: 14px;
     gap: 0;
+  }
+
+  .pages.two-questions .grid {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: none !important;
+    grid-auto-rows: minmax(180px, auto);
+  }
+
+  .pages.two-questions .cell {
+    min-height: 180px;
   }
 }
 
