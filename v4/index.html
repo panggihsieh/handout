@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Latex數學-圖文練習簿 v4</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
-  <link rel="stylesheet" href="styles.css?v=20261103-v4-json">
+  <link rel="stylesheet" href="styles.css?v=20261103-json-prompt">
 </head>
 <body>
   <div class="app-shell">
@@ -84,6 +84,39 @@
       <div class="field field-wide helper-card">
         <span>輸入方式</span>
         <p class="helper-text">每格可選「插入截圖」、「貼上文字」或「JSON」。文字支援 LaTeX 與 Markdown；JSON 可組合題文、公式與 SVG 圖形。列印時隱藏操作按鈕，透過 + / - 調整大小。</p>
+        <div class="json-prompt">
+          <button class="json-prompt-trigger" type="button" aria-expanded="false" aria-controls="jsonPromptPanel">JSON 提示詞</button>
+          <div id="jsonPromptPanel" class="json-prompt-panel">
+            <div class="json-prompt-heading">
+              <strong>複製給 ChatGPT 的提示詞</strong>
+              <button id="copyJsonPromptButton" type="button">複製提示詞</button>
+              <span id="jsonPromptCopyStatus" role="status"></span>
+            </div>
+            <textarea id="jsonPromptText" readonly aria-label="JSON 生成提示詞" spellcheck="false">請將題目轉成我的練習簿 Web App 支援的 JSON。
+
+格式規則：
+1. 最外層使用 {"blocks": [...]}。
+2. 每個區塊只能使用以下格式：
+   題文：{"type":"text","value":"題目文字"}
+   公式：{"type":"latex","value":"LaTeX 公式"}
+   附圖：{"type":"svg","value":"完整 SVG 原始碼"}
+3. 每個 value 必須是非空字串。
+4. LaTeX 區塊只放公式本體，不加 $、$$、\( 或 \[ 外框。
+5. 遵守 JSON 跳脫規則：LaTeX 的反斜線寫成 \\；SVG 屬性中的雙引號寫成 \"。
+6. SVG 必須包含 xmlns 與 viewBox，僅使用內嵌圖形，不使用 script、外部圖片或外部資源。
+7. 不使用 question、answer、solution 等自訂欄位；不要將答案或解法放入題目。
+8. 保留原題的數字、單位、條件與所求；附圖以題文、標示數字與明確幾何記號為依據，不依外觀比例推定關係。
+9. 若要求生成類題，先依要求合理換數字並驗算，再使用自然且不同的句型改寫；文字調整時不得再改變已驗算的數字、條件與結果。
+10. 輸出前檢查 JSON 語法與數學內容。
+11. 只輸出 JSON 原文，不加 Markdown 程式碼框或任何說明，讓我可以直接複製貼上。
+
+格式範例：
+{"blocks":[{"type":"text","value":"長方形的長是 8 公分，寬是 5 公分，求面積。"},{"type":"latex","value":"A = 8 \\times 5 = \\underline{\\qquad}"}]}
+
+以下是要轉換的題目：
+【在這裡貼上題目或附上圖片】</textarea>
+          </div>
+        </div>
       </div>
 
     </section>
@@ -164,6 +197,6 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
-  <script src="app.js?v=20261103-v4-upgrade"></script>
+  <script src="app.js?v=20261103-json-prompt"></script>
 </body>
 </html>

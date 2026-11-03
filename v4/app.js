@@ -1058,3 +1058,30 @@ document.addEventListener("paste", async (event) => {
 
 applySettings(loadSettings());
 renderPages();
+
+const copyJsonPromptButton = document.querySelector("#copyJsonPromptButton");
+copyJsonPromptButton.addEventListener("click", async () => {
+  const promptText = document.querySelector("#jsonPromptText");
+  const status = document.querySelector("#jsonPromptCopyStatus");
+  try {
+    await navigator.clipboard.writeText(promptText.value);
+    status.textContent = "已複製";
+  } catch {
+    promptText.focus();
+    promptText.select();
+    status.textContent = "請按 Ctrl+C 複製已選取的提示詞";
+  }
+});
+
+const jsonPrompt = document.querySelector(".json-prompt");
+const jsonPromptTrigger = jsonPrompt.querySelector(".json-prompt-trigger");
+jsonPromptTrigger.addEventListener("click", () => {
+  jsonPrompt.classList.toggle("is-open");
+  jsonPromptTrigger.setAttribute("aria-expanded", String(jsonPrompt.classList.contains("is-open")));
+});
+jsonPrompt.addEventListener("mouseenter", () => jsonPromptTrigger.setAttribute("aria-expanded", "true"));
+jsonPrompt.addEventListener("mouseleave", () => jsonPromptTrigger.setAttribute("aria-expanded", String(jsonPrompt.classList.contains("is-open") || jsonPrompt.contains(document.activeElement))));
+jsonPrompt.addEventListener("focusin", () => jsonPromptTrigger.setAttribute("aria-expanded", "true"));
+jsonPrompt.addEventListener("focusout", (event) => {
+  if (!jsonPrompt.contains(event.relatedTarget)) jsonPromptTrigger.setAttribute("aria-expanded", String(jsonPrompt.classList.contains("is-open") || jsonPrompt.matches(":hover")));
+});
