@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Latex數學-圖文練習簿 v4</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
-  <link rel="stylesheet" href="styles.css?v=20261103-json-prompt-small">
+  <link rel="stylesheet" href="styles.css?v=20261103-json-prompt-static">
 </head>
 <body>
   <div class="app-shell">
@@ -84,9 +84,8 @@
       <div class="field field-wide helper-card">
         <span>輸入方式</span>
         <p class="helper-text">每格可選「插入截圖」、「貼上文字」或「JSON」。文字支援 LaTeX 與 Markdown；JSON 可組合題文、公式與 SVG 圖形。列印時隱藏操作按鈕，透過 + / - 調整大小。
-        <span class="json-prompt">
-          <button class="json-prompt-trigger" type="button" aria-expanded="false" aria-controls="jsonPromptPanel">JSON 提示詞</button>
-          <span id="jsonPromptPanel" class="json-prompt-panel">
+        </p>
+          <div id="jsonPromptPanel" class="json-prompt-panel">
             <span class="json-prompt-heading">
               <strong>複製給 ChatGPT 的提示詞</strong>
               <button id="copyJsonPromptButton" type="button">複製提示詞</button>
@@ -115,8 +114,7 @@
 
 以下是要轉換的題目：
 【在這裡貼上題目或附上圖片】</textarea>
-          </span>
-        </span></p>
+          </div>
       </div>
 
     </section>
@@ -197,6 +195,6 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
-  <script src="app.js?v=20261103-json-repair"></script>
+  <script src="app.js?v=20261103-json-prompt-static"></script>
 </body>
 </html>
