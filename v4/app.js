@@ -536,7 +536,19 @@ function renderAnswerContent(container, item) {
 
   const textBlock = document.createElement("div");
   textBlock.className = "problem-text work-answer-text";
-  renderMathMarkdown(textBlock, item.value);
+  // Use an explicit final-answer label rather than guessing from numbers.
+  const finalLabels = [...item.value.matchAll(/(^|\n|[。！？])\s*(?:(?:所以|因此)[，,]?)?(?:\*\*)?(?:最後答案|答案|答)(?:\*\*)?\s*(?:[:：]|是|為)/g)];
+  const finalLabel = finalLabels.at(-1);
+  if (finalLabel) {
+    const splitAt = finalLabel.index + finalLabel[1].length;
+    renderMathMarkdown(textBlock, item.value.slice(0, splitAt));
+    const finalAnswer = document.createElement("div");
+    finalAnswer.className = "answer-final";
+    renderMathMarkdown(finalAnswer, item.value.slice(splitAt));
+    textBlock.appendChild(finalAnswer);
+  } else {
+    renderMathMarkdown(textBlock, item.value);
+  }
   container.appendChild(textBlock);
   requestAnimationFrame(() => fitAnswerText(container, textBlock));
 }
@@ -1089,7 +1101,7 @@ copyJsonPromptButton.addEventListener("click", () => {
   const frame = document.querySelector("#mathJsonFrame");
   if (!frame.getAttribute("src")) {
     const local = ["127.0.0.1", "localhost"].includes(location.hostname);
-    frame.src = local ? "http://127.0.0.1:5185/?v=20261104-solution-fix" : "../zj454/public/index.html?v=20261104-solution-fix";
+    frame.src = local ? "http://127.0.0.1:5185/?v=20261104-answer-colors" : "../zj454/public/index.html?v=20261104-answer-colors";
   }
   mathJsonDialog.showModal();
 });
@@ -1123,7 +1135,7 @@ async function ensureAnswerModule(){
     frame.addEventListener('load',()=>{clearTimeout(timeout);frame.dataset.ready='true';resolve();},{once:true});
     if(!frame.getAttribute('src')){
       const local=['127.0.0.1','localhost'].includes(location.hostname);
-      frame.src=local?'http://127.0.0.1:5185/?v=20261104-solution-fix':'../zj454/public/index.html?v=20261104-solution-fix';
+      frame.src=local?'http://127.0.0.1:5185/?v=20261104-answer-colors':'../zj454/public/index.html?v=20261104-answer-colors';
     }
   });return frame;
 }

@@ -4,6 +4,8 @@
 
 「AI 解答」會自動切到教師版，將成功取得的解答填入對應右側格子；已有答案的格子維持保留。答案依右格寬高自動放大或縮小，列印前後會重新計算字體大小。
 
+解答出現後會隱藏該格上方的輸入及清除按鈕，答案可使用完整右側高度。計算步驟使用黑色，最後以「答案：」「答：」或「答案是」標示的結果使用紅色；AI 會被要求將最終答案獨立放在最後一行。未標明最終答案或待核對的文字維持黑色。
+
 解答模組的本機與直接連線路徑共用 JSON 解析修復，處理模型漏掉 LaTeX 反斜線跳脫造成的 `Bad escaped character`，並保留正常 JSON 換行與公式換行。格式仍不完整或欄位不符時回報錯誤，不填入答案。修改後須重新啟動 `zj454` 本機後端並重新載入前端模組。
 
 This is the standalone v4 browser app. Open `index.html` or serve the repository and visit `/v4/index.html`. The root app remains v3.1 until this branch is reviewed and merged.

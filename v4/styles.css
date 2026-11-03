@@ -486,6 +486,10 @@ h1 {
 
 .work-answer-text {
   padding: 4px;
+  color: #111;
+}
+
+.work-answer-text .answer-final {
   color: #b91c1c;
 }
 

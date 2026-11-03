@@ -1,4 +1,4 @@
-import { solutionInstructions, solutionSchema, validateSolution, parseSolution } from './solution-spec.js?v=20261104-solution-fix';
+import { solutionInstructions, solutionSchema, validateSolution, parseSolution } from './solution-spec.js?v=20261104-answer-colors';
 import { normalizeSettings, callProvider } from './providers.js';
 import { instructions, responseSchema } from './question-spec.js';
 export const usesLocalBackend = ['127.0.0.1', 'localhost'].includes(location.hostname) && location.port === '5185';
