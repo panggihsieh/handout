@@ -290,7 +290,15 @@ function updateCellFontScale(cellIndex, delta) {
     item.fontScale = nextScale;
   }
 
-  if (!binding || item?.type !== "text") {
+  if (!binding || !item) {
+    return;
+  }
+
+  if (item.type === "image") {
+    const image = binding.content.querySelector(".problem-image");
+    if (image) {
+      image.style.transform = `scale(${(nextScale / 120).toFixed(3)})`;
+    }
     return;
   }
 
@@ -317,6 +325,7 @@ function renderCellContent(container, pane, item, cellIndex = null) {
     image.className = "problem-image";
     image.alt = "題目圖片";
     image.src = item.value;
+    image.style.transform = `scale(${(getCellFontScale(cellIndex) / 120).toFixed(3)})`;
     container.appendChild(image);
     return;
   }
