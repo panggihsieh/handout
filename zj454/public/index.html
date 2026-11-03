@@ -19,14 +19,14 @@ button{background:#2563a1;color:white;border:0;border-radius:8px;padding:10px 14
 #imagePreview{width:100%;height:auto;max-width:100%;max-height:520px;object-fit:contain;margin-top:12px}#status{white-space:pre-wrap;margin:16px 0;color:#1d4f81}
 @media(max-width:960px){.workspace{grid-template-columns:1fr}}
 dialog{width:min(900px,calc(100vw - 32px));max-height:85vh;overflow:auto;border:1px solid #cbd5e1;border-radius:14px;padding:20px}dialog::backdrop{background:#0f172a88}.dialog-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px}.dialog-toolbar h2{margin:0}#popupPreview{font-size:19px;line-height:1.8}button:focus-visible,textarea:focus-visible{outline:3px solid #d97706;outline-offset:3px}
-.api-settings{margin-bottom:16px}.api-settings summary{font-weight:700;cursor:pointer}.api-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.api-fields label{display:flex;flex-direction:column;gap:6px}.api-fields [hidden]{display:none}.api-fields input,.api-fields select{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:6px;font:inherit}.api-note,.api-fields small{font-size:13px;line-height:1.6}.api-settings p{line-height:1.6}.sync-state{font-size:14px;line-height:1.5;color:#64748b}.sync-state[data-state="stale"],.sync-state[data-state="pending"]{color:#9a3412}.sync-state[data-state="error"]{color:#b91c1c}#preview[data-stale="true"]{opacity:.55;border-style:dashed}</style>
+.api-settings{margin-bottom:16px}.api-settings summary{font-weight:700;cursor:pointer}.api-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.api-fields label{display:flex;flex-direction:column;gap:6px}.api-fields [hidden]{display:none}.api-fields input,.api-fields select{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:6px;font:inherit}.api-note,.api-fields small{font-size:13px;line-height:1.6}.api-settings p{line-height:1.6}.sync-state{font-size:14px;line-height:1.5;color:#64748b}.sync-state[data-state="stale"],.sync-state[data-state="pending"]{color:#9a3412}.sync-state[data-state="error"]{color:#b91c1c}#preview[data-stale="true"]{opacity:.55;border-style:dashed}.local-storage-notice{display:inline-block;margin-left:16px;color:#d00000;font-size:16px;line-height:1.6;animation:storage-notice-blink 1.8s ease-in-out infinite}@keyframes storage-notice-blink{0%,100%{opacity:1}50%{opacity:.35}}@media(prefers-reduced-motion:reduce){.local-storage-notice{animation:none}}@media(max-width:600px){.local-storage-notice{display:block;margin-left:0;margin-top:6px}}</style>
 </head>
 <body>
 <h1>數學題目 JSON 轉換與渲染</h1>
 <p>文字／圖片 → AI 結構化 JSON → KaTeX + SVG；也可以直接貼上現有 JSON 預覽。</p>
 <div id="status" role="status">請輸入題目，或貼入現有 JSON。</div>
 <details class="api-settings panel" open>
-<summary>API 設定與加密儲存</summary>
+<summary>API 設定與加密儲存 <span class="local-storage-notice">設定僅加密儲存在個人電腦的瀏覽器，不上傳雲端保存</span></summary>
 <p>已依官方文件接入 OpenAI、Gemini、DeepSeek 與 Qwen 視覺模型；尚未使用你的金鑰實測。MiniMax 圖片理解需另接 MCP，暫未接入。</p>
 <p id="apiMode"></p>
 <div class="api-fields">
