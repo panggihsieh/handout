@@ -59,3 +59,10 @@
 - AI 轉換成功後②③同步更新；轉換期間若①或②變更，舊回覆不套用。
 - 載入四圖案例或一般測試題會同步①②③，並清除不相符的舊截圖。
 - 驗證：`node tests/three-panel-sync.test.mjs`，另已以瀏覽器確認來源變更提醒、JSON 錯誤提示及有效分數自動渲染；沒有發出付費 API 請求。
+
+
+## 授權與智慧財產權
+
+© 2026 panggihsieh 與本專案貢獻者。專案原創內容採 [創用 CC 姓名標示－非商業性－相同方式分享 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-hant)（CC BY-NC-SA 4.0）。保留作者標示，非商業使用，改作以相同方式分享；著作權仍歸原權利人。
+
+完整條款見 [LICENSE](../LICENSE)，適用範圍與第三方素材例外見 [著作權聲明](../COPYRIGHT.md)。

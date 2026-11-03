@@ -77,3 +77,10 @@ Accepted block types are `text`, `latex` (or `katex`), and `svg`. A single `{ "t
 - 不覆蓋既有解答。題目在等待期間改變時不套用舊回覆。「左右皆為題目」模式請先關閉。
 - 條件不足時標記待核對；AI 解答仍需教師檢查。
 - 模擬測試頁：`tests/ai-answers.html`。已驗證訊息往返、對格填入、既有解答保留、KaTeX、長文縮放與過期回覆防護；沒有使用真實金鑰呼叫外部 API。
+
+
+## 授權與智慧財產權
+
+© 2026 panggihsieh 與本專案貢獻者。專案原創內容採 [創用 CC 姓名標示－非商業性－相同方式分享 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-hant)（CC BY-NC-SA 4.0）。保留作者標示，非商業使用，改作以相同方式分享；著作權仍歸原權利人。
+
+完整條款見 [LICENSE](../LICENSE)，適用範圍與第三方素材例外見 [著作權聲明](../COPYRIGHT.md)。
