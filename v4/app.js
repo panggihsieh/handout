@@ -1083,16 +1083,10 @@ applySettings(loadSettings());
 renderPages();
 
 const copyJsonPromptButton = document.querySelector("#copyJsonPromptButton");
-copyJsonPromptButton.addEventListener("click", async () => {
-  const promptText = document.querySelector("#jsonPromptText");
-  const status = document.querySelector("#jsonPromptCopyStatus");
-  try {
-    await navigator.clipboard.writeText(promptText.value);
-    status.textContent = "已複製";
-  } catch {
-    promptText.hidden = false;
-    promptText.focus();
-    promptText.select();
-    status.textContent = "請按 Ctrl+C 複製已選取的提示詞";
-  }
+const mathJsonDialog = document.querySelector("#mathJsonDialog");
+copyJsonPromptButton.addEventListener("click", () => {
+  const frame = document.querySelector("#mathJsonFrame");
+  if (!frame.getAttribute("src")) frame.src = "http://127.0.0.1:5185/";
+  mathJsonDialog.showModal();
 });
+document.querySelector("#closeMathJsonDialog").addEventListener("click", () => mathJsonDialog.close());

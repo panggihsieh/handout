@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Latex數學-圖文練習簿 v4</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
-  <link rel="stylesheet" href="styles.css?v=20261103-json-prompt-static">
+  <link rel="stylesheet" href="styles.css?v=dialog-20261103-json-prompt-static">
 </head>
 <body>
   <div class="app-shell">
@@ -87,8 +87,8 @@
         </p>
           <div id="jsonPromptPanel" class="json-prompt-panel">
             <span class="json-prompt-heading">
-              <strong>複製給 ChatGPT 的提示詞</strong>
-              <button id="copyJsonPromptButton" type="button">複製提示詞</button>
+              <strong>截圖轉 JSON 工具</strong>
+              <button id="copyJsonPromptButton" type="button" aria-haspopup="dialog">JSON 轉換與預覽</button>
               <span id="jsonPromptCopyStatus" role="status"></span>
             </span>
             <textarea id="jsonPromptText" hidden readonly aria-label="JSON 生成提示詞" spellcheck="false">請將題目轉成我的練習簿 Web App 支援的 JSON。
@@ -192,9 +192,17 @@
     </article>
   </template>
 
+  <dialog id="mathJsonDialog" aria-labelledby="mathJsonDialogTitle">
+    <div class="math-json-dialog-header">
+      <h2 id="mathJsonDialogTitle">截圖轉 JSON 與渲染預覽</h2>
+      <button id="closeMathJsonDialog" type="button">關閉</button>
+    </div>
+    <iframe id="mathJsonFrame" title="數學題目 JSON 轉換測試模組"></iframe>
+    <p class="math-json-dialog-note">若內容未載入，請啟動 zj454 服務（連接埠 5185）。<a href="http://127.0.0.1:5185/" target="_blank" rel="noopener">另開模組</a></p>
+  </dialog>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
-  <script src="app.js?v=20261103-json-prompt-static"></script>
+  <script src="app.js?v=20261103-json-module-dialog"></script>
 </body>
 </html>

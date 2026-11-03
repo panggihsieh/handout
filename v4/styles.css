@@ -1103,3 +1103,13 @@ h1 {
 .json-prompt-panel { height: auto; }
 .json-prompt-panel .json-prompt-heading { margin-bottom: 0; }
 #jsonPromptText[hidden] { display: none; }
+
+#mathJsonDialog { width: min(1400px, calc(100vw - 32px)); height: 90vh; max-height: 90vh; padding: 16px; border: 1px solid #a8a29e; border-radius: 14px; background: #fffdf8; }
+#mathJsonDialog[open] { display: flex; flex-direction: column; gap: 12px; }
+#mathJsonDialog::backdrop { background: #11182799; }
+.math-json-dialog-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.math-json-dialog-header h2 { margin: 0; font-size: 18px; }
+#closeMathJsonDialog { padding: 8px 16px; border: 1px solid #111; border-radius: 6px; background: #ffad42; color: #111; cursor: pointer; }
+#mathJsonFrame { flex: 1; width: 100%; min-height: 0; border: 1px solid #ddd; border-radius: 8px; background: white; }
+.math-json-dialog-note { margin: 0; font-size: 12px; color: #6b7280; }
+@media print { #mathJsonDialog { display: none !important; } }
