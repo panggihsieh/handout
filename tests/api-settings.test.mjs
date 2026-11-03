@@ -1,0 +1,43 @@
+import assert from 'node:assert/strict';
+import { normalizeSettings, buildRequest, callProvider } from '../zj454/providers.mjs';
+import { sealSettings, openSettings, verifyAndSeal } from '../zj454/public/vault.js';
+const image='data:image/png;base64,aGVsbG8=';
+const configs=['openai','gemini','deepseek','qwen'].map(provider=>normalizeSettings({provider,apiKey:'fake-test-key'}));
+for(const config of configs){
+ const req=buildRequest(config,{text:'題目',image,instructions:'only JSON',schema:{type:'object'}});
+ assert.ok(req.url.startsWith('https://'));
+ assert.ok(!req.url.includes('fake-test-key'));
+ if(config.provider==='gemini') assert.equal(req.body.contents[0].parts[1].inlineData.data,'aGVsbG8=');
+ else assert.equal(req.body.messages[1].content[1].image_url.url,image);
+ const content='{"blocks":[{"type":"text","value":"題目"}]}';
+ const data=config.provider==='gemini'?{candidates:[{finishReason:'STOP',content:{parts:[{text:content}]}}]}:{choices:[{finish_reason:'stop',message:{content}}]};
+ assert.equal(await callProvider(config,{},async()=>({ok:true,json:async()=>data})),content);
+ await assert.rejects(callProvider(config,{},async()=>({ok:false,status:401})),/金鑰無效/);
+ await assert.rejects(callProvider(config,{},async()=>{throw Error('raw secret fake-test-key');}),error=>!error.message.includes('fake-test-key'));
+}
+assert.throws(()=>normalizeSettings({provider:'minimax',apiKey:'x'}));
+assert.throws(()=>normalizeSettings({provider:'__proto__',apiKey:'x'}));
+assert.throws(()=>normalizeSettings({provider:'qwen',apiKey:'x',model:'qwen-plus'}));
+for(const baseURL of ['http://localhost:8000','https://evil.test/compatible-mode/v1','https://dashscope-intl.aliyuncs.com.evil.test/compatible-mode/v1','https://u:p@dashscope.aliyuncs.com/compatible-mode/v1'])assert.throws(()=>normalizeSettings({provider:'qwen',apiKey:'x',baseURL}));
+assert.equal(normalizeSettings({provider:'qwen',apiKey:'x',baseURL:'https://workspace1.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1'}).provider,'qwen');
+assert.throws(()=>normalizeSettings({provider:'deepseek',apiKey:'x',model:'deepseek-v4-pro'}));
+await assert.rejects(callProvider(configs[0],{},async()=>({ok:true,json:async()=>({choices:[{finish_reason:'length',message:{content:'partial'}}]})})),/未完成/);
+const config=configs[0], password='test-only-password';
+const sealed=await sealSettings(config,password);
+assert.ok(!JSON.stringify(sealed).includes(config.apiKey));
+assert.deepEqual(await openSettings(sealed,password),config);
+assert.notEqual((await sealSettings(config,password)).ciphertext,sealed.ciphertext);
+await assert.rejects(openSettings(sealed,'wrong-password'),/解鎖失敗/);
+const damaged={...sealed,ciphertext:sealed.ciphertext.slice(0,-4)+'AAAA'};
+await assert.rejects(openSettings(damaged,password),/解鎖失敗/);
+await assert.rejects(sealSettings(config,'short'),/至少/);
+console.log('4 provider adapters, endpoint restrictions, errors and encrypted vault: passed (mock only, no paid API calls)');
+
+let verified = false;
+const checked = await verifyAndSeal(config,password,async()=>{verified=true;});
+assert.ok(verified);assert.deepEqual(await openSettings(checked,password),config);
+await assert.rejects(verifyAndSeal(config,password,async()=>{throw Error('connection failed');}),/connection failed/);
+let invalidPasswordCalled = false;
+await assert.rejects(verifyAndSeal(config,'short',async()=>{invalidPasswordCalled=true;}),/至少/);
+assert.equal(invalidPasswordCalled,false);
+console.log('Successful verification required before encryption; failed tests cannot overwrite: passed');

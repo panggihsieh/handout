@@ -50,3 +50,7 @@ Accepted block types are `text`, `latex` (or `katex`), and `svg`. A single `{ "t
 - 開啟 `http://127.0.0.1:5184/tests/four-images.html` 可執行 v4 真正的解析、安全清理與渲染函式，並並列來源與輸出。
 - 測試資料：`zj454/public/test-cases/`；檢查紀錄：`tests/FOUR-IMAGE-REVIEW.md`。
 - 這是對話 GPT 產生資料的模擬驗證，不代表外部 AI API 的自動辨識已驗證。
+
+## API 金鑰設定
+
+「JSON 轉換與預覽」彈窗內已加入四家供應商設定與密碼加密儲存，支援測試成功後自動加密、解鎖、鎖定與刪除；儲存後金鑰不再顯示，更換需重新貼上並測試。詳見 `zj454/API-SETTINGS.md`。手動貼上 JSON、渲染與列印仍不需要金鑰。

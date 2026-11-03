@@ -1,11 +1,23 @@
 import "dotenv/config";
 import express from "express";
-import OpenAI from "openai";
+import { fileURLToPath } from "node:url";
+import { callProvider, normalizeSettings } from "./providers.mjs";
 
 const app = express();
 const PORT = Number(process.env.PORT || 5185);
+// 僅允許本機頁面使用帶金鑰的 JSON 請求，避免跨網站呼叫或 DNS rebinding。
+app.use((req, res, next) => {
+  const hosts = new Set([`127.0.0.1:${PORT}`, `localhost:${PORT}`]);
+  if (!hosts.has(req.headers.host)) return res.status(403).json({ error: "僅允許本機存取。" });
+  if (req.path.startsWith("/api/") && req.method === "POST") {
+    const origins = new Set([`http://127.0.0.1:${PORT}`, `http://localhost:${PORT}`, "http://127.0.0.1:5184", "http://localhost:5184"]);
+    if (!origins.has(req.headers.origin) || !req.is("application/json")) return res.status(403).json({ error: "請從本機模組頁面送出 JSON 請求。" });
+  }
+  res.setHeader("Cache-Control", "no-store");
+  next();
+});
 app.use(express.json({ limit: "12mb" }));
-app.use(express.static("public"));
+app.use(express.static(fileURLToPath(new URL("./public", import.meta.url))));
 
 const instructions = `你是台灣國小數學題目結構化轉換器。將使用者提供的一道題目（文字或截圖）忠實轉換為 JSON。最外層只能有 blocks 陣列，每個 block 只能有 type 與 value，type 僅允許 text、latex、svg，value 必須是非空字串。保留題目數字、分數、單位、選項、附圖標示與所求；不納入原題號、手寫答案或批改記號，不產生解答或提示。latex 只放公式本體，不加數學定界符；SVG 使用 xmlns=http://www.w3.org/2000/svg 和 viewBox、基本幾何圖形與內嵌文字，不使用 script、外部內容、foreignObject 或事件。不得從示意圖外觀比例推定幾何關係。若圖片重要內容辨識不清、無法完整轉換，回傳空 blocks，不要猜測。`;
 
@@ -52,37 +64,31 @@ function validateBlocks(data) {
 
 app.post("/api/convert", async (req, res) => {
   try {
-    if (!process.env.OPENAI_API_KEY ||
-        process.env.OPENAI_API_KEY.startsWith("請填入")) {
-      return res.status(503).json({ error: "尚未設定有效的 OPENAI_API_KEY。" });
-    }
-    const { text, image } = req.body ?? {};
-    if ((!text || !String(text).trim()) && !image) {
-      return res.status(400).json({ error: "請輸入題目文字或上傳圖片。" });
-    }
-    const content = [{ type: "input_text", text: String(text || "請忠實轉換圖片中的單一道數學題目。") }];
-    if (image) {
-      if (typeof image !== "string" ||
-          !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/i.test(image)) {
-        return res.status(400).json({ error: "圖片必須是 PNG、JPEG 或 WebP。" });
-      }
-      content.push({ type: "input_image", image_url: image, detail: "high" });
-    }
-    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    const response = await client.responses.create({
-      model: process.env.OPENAI_MODEL || "gpt-4.1",
-      instructions,
-      input: [{ role: "user", content }],
-      text: { format: { type: "json_schema", name: "math_question", strict: true, schema: responseSchema } }
-    });
-    if (!response.output_text) throw new Error("AI 沒有傳回內容。");
-    res.json(validateBlocks(JSON.parse(response.output_text)));
-  } catch (err) {
-    console.error(err);
-    res.status(422).json({ error: err.message || "轉換失敗" });
+    const { text, image, settings } = req.body ?? {};
+    const config = normalizeSettings(settings ?? { provider: "openai", apiKey: process.env.OPENAI_API_KEY, model: process.env.OPENAI_MODEL });
+    if ((typeof text !== "string" || !text.trim()) && !image) return res.status(400).json({ error: "請輸入題目文字或上傳圖片。" });
+    if (text && (typeof text !== "string" || text.length > 50000)) return res.status(400).json({ error: "題目文字過長或格式錯誤。" });
+    if (image && (typeof image !== "string" || !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/i.test(image) || image.length > 10 * 1024 * 1024)) return res.status(400).json({ error: "圖片必須是 7 MB 以下 PNG、JPEG 或 WebP。" });
+    const output = await callProvider(config, { text, image, instructions, schema: responseSchema });
+    res.json(validateBlocks(JSON.parse(output)));
+  } catch (error) {
+    // 不記錄或回傳供應商原始錯誤，避免金鑰或題目被寫入日誌。
+    res.status(error.status || 422).json({ error: error.safeMessage || (error instanceof SyntaxError ? "模型未傳回有效 JSON，請重試。" : "轉換失敗：請確認 API 設定、額度與輸出格式。") });
   }
 });
 
-app.listen(PORT, "127.0.0.1", () => {
-  console.log(`數學 JSON 模組：http://127.0.0.1:${PORT}`);
+app.post("/api/test", async (req, res) => {
+  try {
+    const config = normalizeSettings(req.body?.settings);
+    await callProvider(config, { text: "請只回答 OK。", test: true });
+    res.json({ message: "連線與模型存取成功；截圖辨識品質請另外測試。" });
+  } catch (error) {
+    res.status(error.status || 422).json({ error: error.safeMessage || "連線失敗，請確認金鑰、模型與網路。" });
+  }
 });
+
+app.use((error, req, res, next) => {
+  res.status(error.status === 413 ? 413 : 400).json({ error: error.status === 413 ? "請求過大，請縮小圖片。" : "請求不是有效的 JSON。" });
+});
+
+app.listen(PORT, "127.0.0.1", () => console.log(`數學 JSON 模組：http://127.0.0.1:${PORT}`));

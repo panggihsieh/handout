@@ -19,12 +19,26 @@ button{background:#2563a1;color:white;border:0;border-radius:8px;padding:10px 14
 #imagePreview{width:100%;height:auto;max-width:100%;max-height:520px;object-fit:contain;margin-top:12px}#status{white-space:pre-wrap;margin:16px 0;color:#1d4f81}
 @media(max-width:960px){.workspace{grid-template-columns:1fr}}
 dialog{width:min(900px,calc(100vw - 32px));max-height:85vh;overflow:auto;border:1px solid #cbd5e1;border-radius:14px;padding:20px}dialog::backdrop{background:#0f172a88}.dialog-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px}.dialog-toolbar h2{margin:0}#popupPreview{font-size:19px;line-height:1.8}button:focus-visible,textarea:focus-visible{outline:3px solid #d97706;outline-offset:3px}
-</style>
+.api-settings{margin-bottom:16px}.api-settings summary{font-weight:700;cursor:pointer}.api-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.api-fields label{display:flex;flex-direction:column;gap:6px}.api-fields [hidden]{display:none}.api-fields input,.api-fields select{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:6px;font:inherit}.api-note,.api-fields small{font-size:13px;line-height:1.6}.api-settings p{line-height:1.6}</style>
 </head>
 <body>
 <h1>數學題目 JSON 轉換與渲染</h1>
 <p>文字／圖片 → AI 結構化 JSON → KaTeX + SVG；也可以直接貼上現有 JSON 預覽。</p>
 <div id="status" role="status">請輸入題目，或貼入現有 JSON。</div>
+<details class="api-settings panel" open>
+<summary>API 設定與加密儲存</summary>
+<p>已依官方文件接入 OpenAI、Gemini、DeepSeek 與 Qwen 視覺模型；尚未使用你的金鑰實測。MiniMax 圖片理解需另接 MCP，暫未接入。</p>
+<div class="api-fields">
+<label>供應商<select id="apiProvider"><option value="openai">OpenAI（GPT）</option><option value="gemini">Google Gemini</option><option value="deepseek">DeepSeek（圖片模型）</option><option value="qwen">Qwen（視覺模型）</option><option disabled>MiniMax（需另接圖片理解工具）</option></select></label>
+<label>模型名稱<input id="apiModel" maxlength="120" autocomplete="off"></label>
+<label>API Key（貼上新金鑰）<input id="apiKey" maxlength="1024" type="password" autocomplete="off" spellcheck="false" placeholder="輸入自己的 API Key"></label>
+<label id="qwenEndpointField" hidden>Qwen 官方 Base URL<input id="apiBaseURL" value="https://dashscope-intl.aliyuncs.com/compatible-mode/v1" spellcheck="false"><small>依帳號區域或 Workspace 網址設定；僅允許阿里雲官方端點。</small></label>
+<label>解鎖密碼<input id="vaultPassword" maxlength="256" type="password" autocomplete="off" placeholder="加密儲存時至少 8 個字元"></label>
+</div>
+<div><button id="unlockApiSettings" type="button">解鎖</button><button id="lockApiSettings" type="button">鎖定</button><button id="deleteApiSettings" type="button">刪除此供應商設定</button><button id="testApiSettings" type="button">測試成功後加密儲存（少量計費）</button></div>
+<p id="apiStatus" role="status"></p>
+<p class="api-note">測試成功後自動加密儲存並清空金鑰欄位，不提供顯示或複製金鑰。解鎖不會重新顯示金鑰；更換時請重新貼上並測試。密碼不保存。解鎖後由本機服務代送請求；按「AI 轉換」會將題目與截圖送至選定供應商並依其規則計費。加密保護儲存資料，無法防止解鎖時的惡意頁面腳本。忘記密碼需刪除設定並重新輸入金鑰。</p>
+</details>
 <section class="test-controls" aria-label="截圖模擬測試"><strong>GPT 截圖模擬測試</strong><p>以下為此對話依四張截圖建立的 JSON，不會呼叫 AI API。 <a href="http://127.0.0.1:5184/tests/four-images.html" target="_blank" rel="noopener">查看 v4 四圖比對</a></p><button type="button" data-case="1">測試 1：圓的分數</button><button type="button" data-case="2">測試 2：分割長方形</button><button type="button" data-case="3">測試 3：平行四邊形</button><button type="button" data-case="4">測試 4：扇形辨識</button></section>
 <main class="workspace">
 <section class="panel"><h2>① 原始題目</h2><textarea id="source" placeholder="貼上數學題目文字..."></textarea><p>題目截圖：可在本頁按 Ctrl+V 貼上，或選擇圖片檔。</p><input id="image" type="file" accept="image/png,image/jpeg,image/webp"><img id="imagePreview" alt="題目截圖" hidden><p><button id="convert">AI 轉換 JSON</button></p></section>
@@ -32,6 +46,7 @@ dialog{width:min(900px,calc(100vw - 32px));max-height:85vh;overflow:auto;border:
 <section class="panel"><h2>③ 渲染預覽</h2><button id="openPreview" type="button">彈跳預覽</button><button id="sample" type="button">載入測試題</button><div id="preview"></div></section>
 </main>
 <dialog id="previewDialog" aria-labelledby="previewDialogTitle"><div class="dialog-toolbar"><h2 id="previewDialogTitle">題目渲染預覽</h2><button id="closePreview" type="button">關閉</button></div><div id="popupPreview"></div></dialog>
+<script type="module" src="api-settings.js?v=2"></script>
 <script>
 const $=id=>document.getElementById(id);let imageData=null;
 const report=s=>$('status').textContent=s;
@@ -105,7 +120,7 @@ document.querySelectorAll('[data-case]').forEach(button=>button.addEventListener
 }));
 $('convert').addEventListener('click',async()=>{
  const button=$('convert');button.disabled=true;
- try{report('正在轉換...');const r=await fetch('/api/convert',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:$('source').value,image:imageData})});const data=await r.json();if(!r.ok)throw Error(data.error||'轉換失敗');validate(data);$('json').value=JSON.stringify(data,null,2);renderQuestion(data);}catch(e){report('轉換失敗：'+e.message);}finally{button.disabled=false;}
+ try{const settings=window.getMathApiSettings?.();if(!settings)throw Error('API 設定尚未載入，請稍後重試。');report('正在轉換...');const r=await fetch('/api/convert',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:$('source').value,image:imageData,settings})});const data=await r.json();if(!r.ok)throw Error(data.error||'轉換失敗');validate(data);$('json').value=JSON.stringify(data,null,2);renderQuestion(data);}catch(e){report('轉換失敗：'+e.message);}finally{button.disabled=false;}
 });
 $('render').addEventListener('click',()=>{try{renderQuestion(JSON.parse($('json').value));}catch(e){report('渲染失敗：'+e.message);}});
 $('copy').addEventListener('click',async()=>{try{const obj=validate(JSON.parse($('json').value));await navigator.clipboard.writeText(JSON.stringify(obj,null,2));report('JSON 已複製。');}catch(e){report('複製失敗：'+e.message);}});
