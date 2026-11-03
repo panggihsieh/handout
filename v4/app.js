@@ -1086,7 +1086,10 @@ const copyJsonPromptButton = document.querySelector("#copyJsonPromptButton");
 const mathJsonDialog = document.querySelector("#mathJsonDialog");
 copyJsonPromptButton.addEventListener("click", () => {
   const frame = document.querySelector("#mathJsonFrame");
-  if (!frame.getAttribute("src")) frame.src = "http://127.0.0.1:5185/";
+  if (!frame.getAttribute("src")) {
+    const local = ["127.0.0.1", "localhost"].includes(location.hostname);
+    frame.src = local ? "http://127.0.0.1:5185/" : "../zj454/public/index.html";
+  }
   mathJsonDialog.showModal();
 });
 document.querySelector("#closeMathJsonDialog").addEventListener("click", () => mathJsonDialog.close());

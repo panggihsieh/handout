@@ -54,3 +54,9 @@ Accepted block types are `text`, `latex` (or `katex`), and `svg`. A single `{ "t
 ## API 金鑰設定
 
 「JSON 轉換與預覽」彈窗內已加入四家供應商設定與密碼加密儲存，支援測試成功後自動加密、解鎖、鎖定與刪除；儲存後金鑰不再顯示，更換需重新貼上並測試。詳見 `zj454/API-SETTINGS.md`。手動貼上 JSON、渲染與列印仍不需要金鑰。
+
+## GitHub Pages
+
+線上網址：`https://panggihsieh.github.io/handout/v4/`。Pages 從 `main` 根目錄發布。
+
+線上彈窗使用同站的 `zj454/public/index.html`，不連到訪客電腦的 localhost。GitHub Pages 沒有 Node 後端，API 請求由使用者瀏覽器直接送到官方供應商，受各家 CORS 與帳號權限限制；若無法直連，請使用本機 5185 後端版。金鑰加密紀錄僅屬於目前網站／瀏覽器，不會與本機版共用。

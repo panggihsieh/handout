@@ -1,4 +1,5 @@
 import { verifyAndSeal, openSettings } from './vault.js';
+import { convertQuestion, testConnection, usesLocalBackend } from './api-client.js';
 const $ = id => document.getElementById(id);
 const presets = { openai: 'gpt-4.1', gemini: 'gemini-2.5-flash', deepseek: 'deepseek-flash', qwen: 'qwen3-vl-plus' };
 const prefix = 'handout-api-vault-v1:';
@@ -49,8 +50,7 @@ $('testApiSettings').addEventListener('click', async () => {
     if (password.length < 8) throw Error('請先輸入至少 8 個字元的解鎖密碼。');
     report('正在測試連線；成功後將加密儲存並清空金鑰欄位…');
     const record = await verifyAndSeal(settings, password, async () => {
-      const response = await fetch('/api/test', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ settings }) });
-      const data = await response.json(); if (!response.ok) throw Error(data.error);
+      await testConnection(settings);
     });
     if (current !== revision) return;
     localStorage.setItem(name, JSON.stringify(record));
@@ -61,3 +61,8 @@ $('testApiSettings').addEventListener('click', async () => {
   finally { button.disabled = false; }
 });
 providerChanged();
+
+window.convertMathQuestion = convertQuestion;
+$('apiMode').textContent = usesLocalBackend ? '本機模式：由本機服務代送 API 請求。' : '線上模式：瀏覽器直接向供應商送出請求；需供應商允許跨來源連線（CORS）。金鑰僅在解鎖後於記憶體中使用。';
+
+if (usesLocalBackend) $("caseComparisonLink").href = "http://127.0.0.1:5184/tests/four-images.html";
