@@ -352,7 +352,7 @@ h1 {
   display: grid;
   grid-template-columns: repeat(1, minmax(0, 1fr));
   grid-template-rows: repeat(4, minmax(0, 1fr));
-  gap: 8mm;
+  gap: 0.5mm;
   flex: 1;
   min-height: 0;
 }
@@ -418,7 +418,7 @@ h1 {
 .work-pane {
   position: relative;
   display: grid;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: minmax(0, 1fr);
   border-left: 2px solid rgba(168, 162, 158, 0.7);
   background: transparent;
   padding-left: 12px;
@@ -445,6 +445,7 @@ h1 {
 }
 
 .work-pane-title {
+  display: none;
   padding: 4px 10px 8px 24px;
   color: var(--accent-deep);
   font-size: 0.69rem;
@@ -1065,7 +1066,7 @@ h1 {
   }
 
   .grid {
-    gap: 10mm;
+    gap: 0.5mm;
   }
 
   .cell {
