@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>v4 四張截圖渲染比對</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"><link rel="stylesheet" href="../v4/styles.css"><style>
+body{padding:20px;background:#f1f5f9}h1{font-size:24px}#results{display:grid;gap:24px}.comparison{background:white;padding:16px;border:1px solid #ccc;border-radius:10px}.pair{display:grid;grid-template-columns:1fr 1fr;gap:20px}.pair>div{min-width:0}.original{width:100%;max-height:520px;object-fit:contain}.rendered{padding:12px;border:1px solid #ddd}.rendered .problem-json{height:auto;overflow:visible}.rendered .problem-json-svg{flex:none;height:260px;transform:none!important}.rendered .problem-json-latex{overflow:auto}#status{margin:16px 0;white-space:pre-wrap}iframe{position:absolute;width:1000px;height:800px;left:-10000px;visibility:hidden}@media(max-width:700px){.pair{grid-template-columns:1fr}}
+</style></head><body><h1>v4 四張截圖 → JSON → SVG／KaTeX 比對</h1><p>GPT 依截圖建立的固定測試資料；使用 v4 實際解析、SVG 清理與渲染函式，不呼叫 AI API，不修改練習單題目。</p><button id="run" disabled>重新驗證四題</button><div id="status" role="status">正在載入 v4…</div><main id="results"></main><iframe id="app" src="../v4/index.html" title="v4 渲染測試環境"></iframe><script>
+const status=document.querySelector('#status'),results=document.querySelector('#results'),button=document.querySelector('#run');
+async function run(){
+ button.disabled=true;results.replaceChildren();let passed=0;
+ try{
+  const app=document.querySelector('#app').contentWindow;
+  if(!app.katex||!app.renderMathInElement)throw Error('v4 公式套件尚未載入');
+  for(let i=1;i<=4;i++){
+   const response=await fetch(`../zj454/public/test-cases/question-${i}.json`);if(!response.ok)throw Error(`測試 ${i} JSON 載入失敗`);
+   const data=await response.json(),source=JSON.stringify(data),blocks=app.parseQuestionJson(source);
+   if(blocks.length!==data.blocks.length)throw Error(`測試 ${i} 區塊遺失`);
+   const host=app.document.createElement('div');app.renderQuestionJson(host,source,120);
+   if(data.blocks.some(b=>b.type==='latex'||/\\\(/.test(b.value))&&!host.querySelector('.katex'))throw Error(`測試 ${i} 公式未渲染`);
+   if(host.querySelector('.katex-error'))throw Error(`測試 ${i} 公式錯誤`);
+   const images=[...host.querySelectorAll('img')];if(images.length!==1)throw Error(`測試 ${i} 配圖遺失`);
+   await Promise.all(images.map(image=>image.decode()));
+   const svg=new DOMParser().parseFromString(decodeURIComponent(images[0].src.split(',').slice(1).join(',')),'image/svg+xml');
+   if(svg.querySelector('parsererror')||svg.querySelector('script,foreignObject'))throw Error(`測試 ${i} SVG 錯誤`);
+   const card=document.createElement('section');card.className='comparison';
+   card.innerHTML=`<h2>測試 ${i}：通過</h2><div class="pair"><div><h3>來源截圖</h3><img class="original" src="../zj454/public/test-cases/source-${i}.png" alt="第 ${i} 題來源截圖"></div><div><h3>v4 實際渲染</h3><div class="rendered"></div></div></div>`;
+   card.querySelector('.rendered').append(document.adoptNode(host));results.append(card);passed++;
+  }
+  status.textContent=`4 / 4 通過：JSON 解析、SVG 清理及圖片解碼、KaTeX 渲染均成功。請對照下方來源核對圖形與標示。`;
+ }catch(error){status.textContent=`${passed} / 4 通過；失敗：${error.message}`;}finally{button.disabled=false;}
+}
+button.addEventListener('click',run);document.querySelector('#app').addEventListener('load',run);
+</script></body></html>

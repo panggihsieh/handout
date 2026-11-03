@@ -1,0 +1,12 @@
+{
+  "blocks": [
+    {
+      "type": "text",
+      "value": "下圖中的四邊形 \\(ABCD\\) 是一個平行四邊形，面積是 180 平方公分，請問四邊形 \\(ABCD\\) 的周長是多少公分？"
+    },
+    {
+      "type": "svg",
+      "value": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"40 115 645 240\" width=\"500\" role=\"img\"><g font-family=\"serif\" font-size=\"20\" fill=\"#111\"><path d=\"M75 269 L262 181 L447 230 L262 318 Z\" fill=\"none\" stroke=\"#111\" stroke-width=\"1.6\"/><path d=\"M75 269 L110 136 L262 181 M98 140 Q61 185 72 251 M424 261 Q441 246 447 233 M275 318 Q300 315 316 308\" fill=\"none\" stroke=\"#111\" stroke-width=\"1.2\" stroke-dasharray=\"9 7\"/><text x=\"267\" y=\"176\" font-style=\"italic\">A</text><text x=\"54\" y=\"288\" font-style=\"italic\">B</text><text x=\"239\" y=\"339\" font-style=\"italic\">C</text><text x=\"453\" y=\"228\" font-style=\"italic\">D</text><text x=\"65\" y=\"193\" >12</text><text x=\"359\" y=\"298\" >18</text><text x=\"474\" y=\"341\" >（單位：公分）</text><path d=\"M106 151 L121 155 L125 140\" fill=\"none\" stroke=\"#111\" stroke-width=\"1.2\"/></g></svg>"
+    }
+  ]
+}

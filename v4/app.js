@@ -290,7 +290,7 @@ const SVG_ATTRIBUTES = new Set([
   "cx", "cy", "r", "rx", "ry", "d", "points", "fill", "fill-opacity", "stroke",
   "stroke-width", "stroke-linecap", "stroke-linejoin", "stroke-dasharray", "stroke-dashoffset",
   "stroke-opacity", "opacity", "transform", "font-size", "font-family", "font-weight",
-  "text-anchor", "dominant-baseline", "id", "href", "offset", "stop-color", "stop-opacity",
+  "font-style", "text-anchor", "dominant-baseline", "id", "href", "offset", "stop-color", "stop-opacity",
   "clip-path", "marker-start", "marker-end",
 ]);
 

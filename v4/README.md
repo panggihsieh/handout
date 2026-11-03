@@ -42,3 +42,11 @@ Each question has a JSON paste button. Copy one of these JSON forms and click JS
 ```
 
 Accepted block types are `text`, `latex` (or `katex`), and `svg`. A single `{ "type": "latex", "value": "..." }`, an array of blocks, or an object with `text`, `latex`, and/or `svg` keys also works. LaTeX is rendered with KaTeX; SVG markup is filtered to safe drawing elements and displayed as an image. Raw scripts, external references, and HTML inside SVG are not supported. Invalid JSON leaves the existing question unchanged.
+
+## 四張截圖的 GPT 模擬測試（2026/11/03）
+
+- v4 的「JSON 轉換與預覽」開啟獨立 `zj454` 模組；需同時啟動 5184 與 5185 服務。
+- 模組提供四題固定測試資料（原截圖、JSON、SVG、行內／獨立 LaTeX），不需要 API Key。
+- 開啟 `http://127.0.0.1:5184/tests/four-images.html` 可執行 v4 真正的解析、安全清理與渲染函式，並並列來源與輸出。
+- 測試資料：`zj454/public/test-cases/`；檢查紀錄：`tests/FOUR-IMAGE-REVIEW.md`。
+- 這是對話 GPT 產生資料的模擬驗證，不代表外部 AI API 的自動辨識已驗證。

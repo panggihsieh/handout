@@ -1,0 +1,16 @@
+{
+  "blocks": [
+    {
+      "type": "text",
+      "value": "下圖中有兩個一樣大的圓，\\(O\\) 點及 \\(P\\) 點分別是這兩個圓的圓心。"
+    },
+    {
+      "type": "svg",
+      "value": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"55 75 425 285\" width=\"500\" role=\"img\"><g font-family=\"serif\" font-size=\"20\" fill=\"#111\"><path d=\"M197 216 L95 168 A112 112 0 0 1 140 119 Z M216 216 L294 159 A112 112 0 0 1 294 274 Z M197 216 H85 A112 112 0 0 0 197 328 Z M329 104 A112 112 0 0 1 329 328 Z\" fill=\"#bfbfbf\"/><g fill=\"none\" stroke=\"#888\" stroke-width=\"0.8\"><rect x=\"65\" y=\"85\" width=\"394\" height=\"263\"/><path d=\"M65 85 V348\"/><path d=\"M84 85 V348\"/><path d=\"M103 85 V348\"/><path d=\"M122 85 V348\"/><path d=\"M141 85 V348\"/><path d=\"M160 85 V348\"/><path d=\"M179 85 V348\"/><path d=\"M198 85 V348\"/><path d=\"M217 85 V348\"/><path d=\"M236 85 V348\"/><path d=\"M255 85 V348\"/><path d=\"M274 85 V348\"/><path d=\"M293 85 V348\"/><path d=\"M312 85 V348\"/><path d=\"M331 85 V348\"/><path d=\"M350 85 V348\"/><path d=\"M369 85 V348\"/><path d=\"M388 85 V348\"/><path d=\"M407 85 V348\"/><path d=\"M426 85 V348\"/><path d=\"M445 85 V348\"/><path d=\"M65 85 H459\"/><path d=\"M65 104 H459\"/><path d=\"M65 123 H459\"/><path d=\"M65 142 H459\"/><path d=\"M65 161 H459\"/><path d=\"M65 180 H459\"/><path d=\"M65 199 H459\"/><path d=\"M65 218 H459\"/><path d=\"M65 237 H459\"/><path d=\"M65 256 H459\"/><path d=\"M65 275 H459\"/><path d=\"M65 294 H459\"/><path d=\"M65 313 H459\"/><path d=\"M65 332 H459\"/></g><g fill=\"none\" stroke=\"#111\" stroke-width=\"1.5\"><circle cx=\"197\" cy=\"216\" r=\"112\" stroke-dasharray=\"13 11\"/><circle cx=\"329\" cy=\"216\" r=\"112\" stroke-dasharray=\"13 11\"/><path d=\"M197 216 L95 168 A112 112 0 0 1 140 119 Z M216 216 L294 159 A112 112 0 0 1 294 274 Z M197 216 H85 A112 112 0 0 0 197 328 Z M329 104 A112 112 0 0 1 329 328 Z\"/></g><circle cx=\"197\" cy=\"216\" r=\"3\"/><circle cx=\"329\" cy=\"216\" r=\"3\"/><text x=\"191\" y=\"204\" font-style=\"italic\">O</text><text x=\"336\" y=\"211\" font-style=\"italic\">P</text><text x=\"122\" y=\"166\" >甲</text><text x=\"264\" y=\"224\" >乙</text><text x=\"122\" y=\"244\" >丙</text><text x=\"387\" y=\"243\" >丁</text></g></svg>"
+    },
+    {
+      "type": "text",
+      "value": "圖中有甲、乙、丙、丁四個塗色區塊，哪些塗色區塊是扇形？"
+    }
+  ]
+}

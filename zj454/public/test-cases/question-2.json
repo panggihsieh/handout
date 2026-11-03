@@ -1,0 +1,16 @@
+{
+  "blocks": [
+    {
+      "type": "text",
+      "value": "如圖，將長方形切成平行四邊形甲、三角形乙及三角形丙。"
+    },
+    {
+      "type": "svg",
+      "value": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"45 65 650 265\" width=\"500\" role=\"img\"><g font-family=\"serif\" font-size=\"20\" fill=\"#111\"><path d=\"M72 87 H469 V278 H72 Z M72 278 L310 87 M230 278 L469 87\" fill=\"none\" stroke=\"#111\" stroke-width=\"1.6\"/><path d=\"M72 282 Q151 311 230 282 M230 282 Q350 313 469 282\" fill=\"none\" stroke=\"#111\" stroke-dasharray=\"8 6\"/><text x=\"142\" y=\"143\" >乙</text><text x=\"261\" y=\"193\" >甲</text><text x=\"379\" y=\"239\" >丙</text><rect x=\"135\" y=\"284\" width=\"30\" height=\"22\" fill=\"white\"/><rect x=\"335\" y=\"284\" width=\"30\" height=\"22\" fill=\"white\"/><text x=\"139\" y=\"302\" >10</text><text x=\"339\" y=\"302\" >15</text><text x=\"482\" y=\"302\" >（單位：公分）</text></g></svg>"
+    },
+    {
+      "type": "text",
+      "value": "已經知道平行四邊形甲的面積是 120 平方公分，請問長方形的面積是多少平方公分？"
+    }
+  ]
+}
