@@ -18,3 +18,26 @@ export const responseSchema = {
   required: ["blocks"]
 };
 
+
+export function validateBlocks(data) {
+  if (!data || !Array.isArray(data.blocks) || data.blocks.length === 0 ||
+      Object.keys(data).join() !== "blocks") {
+    throw new Error("題目無法完整辨識，請確認圖片或題目內容。");
+  }
+  for (const b of data.blocks) {
+    if (!b || !["text", "latex", "svg"].includes(b.type) ||
+        typeof b.value !== "string" || !b.value.trim() ||
+        Object.keys(b).sort().join() !== "type,value") {
+      throw new Error("題目含有不合法的 JSON 區塊。");
+    }
+    if (b.type === "svg" && (!/<svg\b/i.test(b.value) ||
+        !/xmlns=["']http:\/\/www\.w3\.org\/2000\/svg["']/i.test(b.value) ||
+        !/\bviewBox=["'][^"']+["']/i.test(b.value) ||
+        /<\s*(script|foreignObject|image|use|style|animate|set)\b/i.test(b.value) ||
+        /\bon[a-z]+\s*=/i.test(b.value) ||
+        /\b(?:href|src)\s*=/i.test(b.value))) {
+      throw new Error("SVG 不符合基本安全格式限制。");
+    }
+  }
+  return data;
+}

@@ -15,7 +15,8 @@
 textarea{width:100%;min-height:330px;padding:12px;border:1px solid #cbd5e1;border-radius:8px;resize:vertical;font:14px/1.6 Consolas,monospace}
 button{background:#2563a1;color:white;border:0;border-radius:8px;padding:10px 14px;margin:8px 6px 0 0;cursor:pointer}button:disabled{opacity:.5}
 .conversion-actions{display:flex;align-items:center;flex-wrap:wrap;gap:14px;margin-top:16px}.conversion-actions button{margin:0}.conversion-progress{display:flex;align-items:center;gap:10px;font-size:14px;color:#475569}.conversion-progress[hidden]{display:none}.progress-ring{--progress:0;position:relative;display:grid;place-items:center;flex-shrink:0;width:58px;height:58px;border-radius:50%;background:conic-gradient(#2563a1 calc(var(--progress)*1%),#e2e8f0 0);font-size:13px;font-weight:700;color:#1d4f81}.progress-ring::before{content:"";position:absolute;inset:5px;border-radius:50%;background:white}.progress-ring span{position:relative}.conversion-progress[data-state="error"]{color:#b91c1c}.conversion-progress[data-state="success"]{color:#166534}
-#preview{min-height:330px;border:1px solid #e2e8f0;border-radius:8px;padding:16px;font-size:19px;line-height:1.8}
+#preview,#variantPreview{min-height:330px;border:1px solid #e2e8f0;border-radius:8px;padding:16px;font-size:19px;line-height:1.8}
+.variant-dialog{width:min(1200px,calc(100vw - 32px))}.variant-layout{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.variant-layout>section{min-width:0}.variant-layout textarea{min-height:330px}.variant-note{font-size:14px;line-height:1.6;color:#64748b}@media(max-width:760px){.variant-layout{grid-template-columns:1fr}}
 .question-block{margin:10px 0;white-space:pre-wrap}.math-block{overflow-x:auto}.svg-block svg{display:block;max-width:100%;width:auto;height:auto;max-height:300px;margin:auto}
 #imagePreview{width:100%;height:auto;max-width:100%;max-height:520px;object-fit:contain;margin-top:12px}#status{white-space:pre-wrap;margin:16px 0;color:#1d4f81}
 @media(max-width:960px){.workspace{grid-template-columns:1fr}}
@@ -45,11 +46,12 @@ dialog{width:min(900px,calc(100vw - 32px));max-height:85vh;overflow:auto;border:
 <figure class="workflow-figure"><img src="workflow.svg?v=1" alt="操作流程：①貼上題目文字或截圖，按 AI 轉換（可能計費）→②核對或編輯 JSON，停頓後自動更新→③檢查 SVG 與 KaTeX 預覽。修改①需重新轉換；修改②不呼叫 API。"></figure>
 <main class="workspace">
 <section class="panel"><h2>① 原始題目</h2><textarea id="source" placeholder="貼上數學題目文字..."></textarea><p>題目截圖：可在本頁按 Ctrl+V 貼上，或選擇圖片檔。</p><input id="image" type="file" accept="image/png,image/jpeg,image/webp"><img id="imagePreview" alt="題目截圖" hidden><div class="conversion-actions"><button id="convert">AI 轉換 JSON</button><div id="conversionProgress" class="conversion-progress" hidden><div id="conversionRing" class="progress-ring" role="progressbar" aria-label="預估轉換進度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="conversionPercent">0%</span></div><span id="conversionCountdown"></span></div></div></section>
-<section class="panel"><h2>② JSON</h2><p id="jsonState" class="sync-state" role="status">等待輸入或轉換</p><textarea id="json" spellcheck="false" placeholder='{"blocks":[]}'></textarea><p><button id="render">渲染 JSON</button><button id="copy">複製 JSON</button></p></section>
+<section class="panel"><h2>② JSON</h2><p id="jsonState" class="sync-state" role="status">等待輸入或轉換</p><textarea id="json" spellcheck="false" placeholder='{"blocks":[]}'></textarea><p><button id="render">渲染 JSON</button><button id="copy">複製 JSON</button><button id="variant" type="button">類似題（AI）</button></p><p class="variant-note">類似題會合理更換數字並調整敘述。產生與 AI 檢核各呼叫一次 API，可能計費；原題保留。</p><p id="variantStatus" class="sync-state" role="status"></p></section>
 <section class="panel"><h2>③ 渲染預覽</h2><p id="previewState" class="sync-state" role="status">等待 JSON</p><button id="openPreview" type="button">彈跳預覽</button><button id="sample" type="button">載入測試題</button><div id="preview"></div></section>
 </main>
 <dialog id="previewDialog" aria-labelledby="previewDialogTitle"><div class="dialog-toolbar"><h2 id="previewDialogTitle">題目渲染預覽</h2><button id="closePreview" type="button">關閉</button></div><div id="popupPreview"></div></dialog>
-<script type="module" src="api-settings.js?v=20261104-answer-colors"></script>
+<dialog id="variantDialog" class="variant-dialog" aria-labelledby="variantDialogTitle"><div class="dialog-toolbar"><h2 id="variantDialogTitle">類似題 JSON 與預覽</h2><button id="closeVariant" type="button">關閉類似題</button></div><p class="variant-note">AI 檢核已通過，仍請人工核對數學條件與附圖。原題未覆蓋。</p><div class="variant-layout"><section><h3>新題目 JSON</h3><textarea id="variantJson" readonly aria-label="類似題 JSON" spellcheck="false"></textarea><button id="copyVariant" type="button">複製新 JSON</button><span id="variantCopyStatus" role="status"></span></section><section><h3>新題目預覽</h3><div id="variantPreview"></div></section></div></dialog>
+<script type="module" src="api-settings.js?v=20261104-variant"></script>
 <script>
 const $=id=>document.getElementById(id);let imageData=null;
 const report=s=>$('status').textContent=s;
@@ -104,9 +106,9 @@ function validate(data){
  }
  return data;
 }
-function renderQuestion(data){
+function renderQuestion(data,preview=$('preview')){
  validate(data);if(!window.katex||!window.renderMathInElement||!window.DOMPurify)throw Error('KaTeX 或 SVG 安全套件尚未載入，請確認網路。');
- const preview=$('preview'),fragment=document.createDocumentFragment();
+ const fragment=document.createDocumentFragment();
  for(const b of data.blocks){
   const node=document.createElement('div');node.className='question-block';
   if(b.type==='text'){
@@ -201,5 +203,26 @@ $('convert').addEventListener('click',async()=>{
 });
 $('render').addEventListener('click',refreshPreview);
 $('copy').addEventListener('click',async()=>{try{const obj=validate(JSON.parse($('json').value));await navigator.clipboard.writeText(JSON.stringify(obj,null,2));report('JSON 已複製。');}catch(e){report('複製失敗：'+e.message);}});
+$('variant').addEventListener('click',async()=>{
+ const button=$('variant');if(button.disabled)return;
+ button.disabled=true;const current=++operation,snapshot=$('json').value;
+ try{
+  const original=validate(JSON.parse(snapshot));
+  const settings=window.getMathApiSettings?.();if(!settings)throw Error('API 設定尚未載入，請稍後重試。');
+  if(!window.generateMathVariant)throw Error('類似題模組尚未載入，請重新整理。');
+  $('variantStatus').textContent='正在產生並檢核類似題（可能計費）…';
+  const candidate=validate(await window.generateMathVariant(settings,original));
+  if(current!==operation||snapshot!==$('json').value){$('variantStatus').textContent='原題已變更，未開啟舊題目的類似題，請重新產生。';return;}
+  renderQuestion(candidate,$('variantPreview'));
+  $('variantJson').value=JSON.stringify(candidate,null,2);$('variantCopyStatus').textContent='';
+  $('variantDialog').showModal();$('variantStatus').textContent='類似題已產生，原題保留。';
+ }catch(error){$('variantStatus').textContent='類似題產生失敗：'+error.message;}
+ finally{button.disabled=false;}
+});
+$('closeVariant').addEventListener('click',()=>$('variantDialog').close());
+$('copyVariant').addEventListener('click',async()=>{
+ try{const data=validate(JSON.parse($('variantJson').value));await navigator.clipboard.writeText(JSON.stringify(data,null,2));$('variantCopyStatus').textContent='已複製';}
+ catch{$('variantJson').focus();$('variantJson').select();$('variantCopyStatus').textContent='請按 Ctrl+C 複製已選取的新 JSON';}
+});
 </script>
 </body></html>

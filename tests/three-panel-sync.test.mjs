@@ -4,11 +4,11 @@ import { readFileSync } from 'node:fs';
 const html=readFileSync(new URL('../zj454/public/index.html',import.meta.url),'utf8');
 const script=html.split('<script>')[1].split('</script>')[0];
 const elements=new Map(),timers=new Map(),intervals=new Map();let timerId=0,now=0;
-function element(id){if(!elements.has(id))elements.set(id,{value:'',textContent:'',dataset:{},disabled:false,hidden:true,events:{},style:{setProperty(name,value){this[name]=value;}},setAttribute(name,value){this[name]=value;},addEventListener(name,fn){this.events[name]=fn;},removeAttribute(name){delete this[name];}});return elements.get(id);}
+function element(id){if(!elements.has(id))elements.set(id,{value:'',textContent:'',dataset:{},disabled:false,hidden:true,events:{},style:{setProperty(name,value){this[name]=value;}},showModal(){this.open=true;},close(){this.open=false;},setAttribute(name,value){this[name]=value;},addEventListener(name,fn){this.events[name]=fn;},removeAttribute(name){delete this[name];}});return elements.get(id);}
 const context=vm.createContext({Date:{now:()=>now},document:{getElementById:element,querySelectorAll:()=>[],addEventListener(){}},window:{getMathApiSettings:()=>({provider:'fake'})},setTimeout:fn=>{timers.set(++timerId,fn);return timerId;},clearTimeout:id=>timers.delete(id),setInterval:fn=>{intervals.set(++timerId,fn);return timerId;},clearInterval:id=>intervals.delete(id),FileReader:class{}});
 vm.runInContext(script,context);
 // Render implementation is covered by the four-image browser test; isolate UI synchronization here.
-vm.runInContext(`renderQuestion=data=>{if(!data.blocks?.length)throw Error('empty blocks');$('preview').textContent=data.blocks.map(b=>b.value).join('|');};`,context);
+vm.runInContext(`renderQuestion=(data,target=$('preview'))=>{if(!data.blocks?.length)throw Error('empty blocks');target.textContent=data.blocks.map(b=>b.value).join('|');};`,context);
 const input=id=>element(id).events.input();
 const flush=()=>{for(const [id,fn]of timers){timers.delete(id);fn();}};
 element('json').value=JSON.stringify({blocks:[{type:'text',value:'第一題'}]});input('json');flush();
@@ -37,3 +37,24 @@ await element('convert').events.click();
 assert.equal(element('conversionProgress').dataset.state,'error');assert.notEqual(element('conversionPercent').textContent,'100%');assert.equal(intervals.size,0);assert.equal(element('convert').disabled,false);
 assert.match(element('status').textContent,/測試網路錯誤/);
 console.log('Three-panel sync, estimated progress/countdown, overtime cap, success, error and stale-response timer cleanup: passed');
+
+element('json').value=JSON.stringify({blocks:[{type:'text',value:'原題 8 與 5'}]});
+const originalJson=element('json').value;
+context.window.generateMathVariant=async()=>({blocks:[{type:'text',value:'類似題 16 與 10'}]});
+await element('variant').events.click();
+assert.equal(element('json').value,originalJson);
+assert.equal(element('variantDialog').open,true);
+assert.match(element('variantPreview').textContent,/16 與 10/);
+assert.match(element('variantJson').value,/16 與 10/);
+element('closeVariant').events.click();assert.equal(element('variantDialog').open,false);
+let resolveVariant;
+context.window.generateMathVariant=()=>new Promise(resolve=>resolveVariant=resolve);
+const pendingVariant=element('variant').events.click();
+element('json').value=JSON.stringify({blocks:[{type:'text',value:'修改後的原題'}]});input('json');
+resolveVariant({blocks:[{type:'text',value:'舊類似題'}]});await pendingVariant;
+assert.match(element('variantStatus').textContent,/原題已變更/);
+assert.equal(element('variantDialog').open,false);assert.equal(element('variant').disabled,false);
+context.window.generateMathVariant=async()=>{throw Error('檢核失敗');};
+await element('variant').events.click();assert.match(element('variantStatus').textContent,/檢核失敗/);
+assert.equal(element('variantDialog').open,false);
+console.log('Variant dialog, separate JSON/preview, original preservation, stale result and failure states: passed');

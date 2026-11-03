@@ -1,5 +1,5 @@
 import { verifyAndSeal, openSettings } from './vault.js';
-import { convertQuestion, testConnection, usesLocalBackend, solveQuestion } from './api-client.js?v=20261104-answer-colors';
+import { convertQuestion, testConnection, usesLocalBackend, solveQuestion, generateVariant } from './api-client.js?v=20261104-variant';
 const $ = id => document.getElementById(id);
 const presets = { openai: 'gpt-4.1', gemini: 'gemini-2.5-flash', deepseek: 'deepseek-flash', qwen: 'qwen3-vl-plus' };
 const prefix = 'handout-api-vault-v1:';
@@ -63,6 +63,7 @@ $('testApiSettings').addEventListener('click', async () => {
 providerChanged();
 
 window.convertMathQuestion = convertQuestion;
+window.generateMathVariant = generateVariant;
 $('apiMode').textContent = usesLocalBackend ? '本機模式：由本機服務代送 API 請求。' : '線上模式：瀏覽器直接向供應商送出請求；需供應商允許跨來源連線（CORS）。金鑰僅在解鎖後於記憶體中使用。';
 
 if (usesLocalBackend) $("caseComparisonLink").href = "http://127.0.0.1:5184/tests/four-images.html";

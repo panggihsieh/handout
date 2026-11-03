@@ -1,6 +1,7 @@
 import { solutionInstructions, solutionSchema, validateSolution, parseSolution } from './solution-spec.js?v=20261104-answer-colors';
 import { normalizeSettings, callProvider } from './providers.js';
-import { instructions, responseSchema } from './question-spec.js';
+import { instructions, responseSchema } from './question-spec.js?v=20261104-variant';
+import { createVariant } from './variant-spec.js?v=20261104-variant';
 export const usesLocalBackend = ['127.0.0.1', 'localhost'].includes(location.hostname) && location.port === '5185';
 async function backend(path, body) {
   const response = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -29,4 +30,9 @@ export async function solveQuestion(settings,{text,image}) {
   if(usesLocalBackend)return validateSolution(await backend('/api/solve',{settings,text,image}));
   const output=await direct(settings,{text,image,instructions:solutionInstructions,schema:solutionSchema});
   return parseSolution(output);
+}
+
+export async function generateVariant(settings, question) {
+  if(usesLocalBackend)return backend('/api/variant',{settings,question});
+  return createVariant(normalizeSettings(settings),question,direct);
 }
