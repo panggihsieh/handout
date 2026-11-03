@@ -7,7 +7,7 @@ function getTodayLocalDateValue() {
 }
 
 const DEFAULT_SETTINGS = {
-  title: "數學素養練習單",
+  title: "梅山鄉大南國小",
   className: "",
   studentName: "",
   date: getTodayLocalDateValue(),
@@ -217,8 +217,18 @@ function escapeHtml(value) {
     .replaceAll("'", "&#39;");
 }
 
+function normalizeMathDelimiters(sourceText) {
+  // Normalize escaped outer pairs, preserving TeX line breaks inside them.
+  return sourceText.trim().replace(
+    /\\\\\(([\s\S]*?)\\\\\)|\\\\\[([\s\S]*?)\\\\\]/g,
+    (_, inlineMath, displayMath) => inlineMath !== undefined
+      ? `\\(${inlineMath}\\)`
+      : `\\[${displayMath}\\]`,
+  );
+}
+
 function renderMathMarkdown(container, sourceText) {
-  const markdownSource = sourceText.trim();
+  const markdownSource = normalizeMathDelimiters(sourceText);
 
   if (!markdownSource) {
     container.innerHTML = "";
@@ -232,11 +242,24 @@ function renderMathMarkdown(container, sourceText) {
     });
   }
 
+  // Protect TeX delimiters and contents from Markdown's escape/format rules.
+  const mathSpans = [];
+  let mathTokenPrefix = "HANDOUTMATH";
+  while (markdownSource.includes(mathTokenPrefix)) {
+    mathTokenPrefix += "X";
+  }
+  const protectedSource = markdownSource.replace(
+    /\$\$[\s\S]+?\$\$|\\\[[\s\S]+?\\\]|\\\([\s\S]+?\\\)|(?<!\\)\$(?!\$)(?:\\[\s\S]|[^$\\])+?\$/g,
+    (math) => `${mathTokenPrefix}${mathSpans.push(math) - 1}END`,
+  );
   const html = window.marked?.parse
-    ? window.marked.parse(markdownSource)
-    : `<p>${escapeHtml(markdownSource)}</p>`;
+    ? window.marked.parse(protectedSource)
+    : `<p>${escapeHtml(protectedSource)}</p>`;
 
-  container.innerHTML = html;
+  container.innerHTML = html.replace(
+    new RegExp(`${mathTokenPrefix}(\\d+)END`, "g"),
+    (_, index) => escapeHtml(mathSpans[Number(index)]),
+  );
 
   renderInlineMath(container);
 }
@@ -363,7 +386,7 @@ function renderQuestionJson(container, source, fontScale) {
     } else {
       const textBlock = document.createElement("div");
       textBlock.className = "problem-json-text";
-      textBlock.textContent = block.value;
+      textBlock.textContent = normalizeMathDelimiters(block.value);
       renderInlineMath(textBlock);
       wrapper.appendChild(textBlock);
     }
