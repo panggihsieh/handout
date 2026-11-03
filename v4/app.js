@@ -329,13 +329,36 @@ function sanitizeSvg(source) {
   return new XMLSerializer().serializeToString(safeDocument.documentElement);
 }
 
-function parseQuestionJson(source) {
-  let data;
+// 僅在原始 JSON 解析失敗時，修復複製自聊天介面的常見格式污染。
+function parseJsonWithRepair(source) {
   try {
-    data = JSON.parse(source);
+    return JSON.parse(source);
   } catch {
-    throw new Error("不是有效的 JSON");
+    const cleaned = source.trim()
+      .replace(/^```(?:json)?\s*\r?\n([\s\S]*?)\r?\n```$/i, "$1")
+      .replace(/\\[ \t]*\r?\n/g, "\n")
+      .replace(/&#(?:x0*20|0*32);/gi, " ");
+    try {
+      return JSON.parse(cleaned);
+    } catch {
+      const repaired = cleaned
+        // Markdown 將 JSON 的跳脫引號再加了一層反斜線。
+        .replace(/\\{2}"/g, '\\"')
+        // LaTeX 命令前的三個反斜線應為 JSON 中的兩個。
+        .replace(/\\{3}(?=[A-Za-z])/g, '\\\\')
+        // 移除 Markdown 對 SVG、網址等標點添加的無效跳脫。
+        .replace(/\\([<>:./])/g, "$1");
+      try {
+        return JSON.parse(repaired);
+      } catch {
+        throw new Error("不是有效的 JSON，自動修復後仍無法解析，請檢查引號、括號與跳脫符號");
+      }
+    }
   }
+}
+
+function parseQuestionJson(source) {
+  const data = parseJsonWithRepair(source);
 
   let entries;
   if (Array.isArray(data)) {
