@@ -83,15 +83,15 @@
 
       <div class="field field-wide helper-card">
         <span>輸入方式</span>
-        <p class="helper-text">每格可選「插入截圖」、「貼上文字」或「JSON」。文字支援 LaTeX 與 Markdown；JSON 可組合題文、公式與 SVG 圖形。列印時隱藏操作按鈕，透過 + / - 調整大小。</p>
-        <div class="json-prompt">
+        <p class="helper-text">每格可選「插入截圖」、「貼上文字」或「JSON」。文字支援 LaTeX 與 Markdown；JSON 可組合題文、公式與 SVG 圖形。列印時隱藏操作按鈕，透過 + / - 調整大小。
+        <span class="json-prompt">
           <button class="json-prompt-trigger" type="button" aria-expanded="false" aria-controls="jsonPromptPanel">JSON 提示詞</button>
-          <div id="jsonPromptPanel" class="json-prompt-panel">
-            <div class="json-prompt-heading">
+          <span id="jsonPromptPanel" class="json-prompt-panel">
+            <span class="json-prompt-heading">
               <strong>複製給 ChatGPT 的提示詞</strong>
               <button id="copyJsonPromptButton" type="button">複製提示詞</button>
               <span id="jsonPromptCopyStatus" role="status"></span>
-            </div>
+            </span>
             <textarea id="jsonPromptText" readonly aria-label="JSON 生成提示詞" spellcheck="false">請將題目轉成我的練習簿 Web App 支援的 JSON。
 
 格式規則：
@@ -115,8 +115,8 @@
 
 以下是要轉換的題目：
 【在這裡貼上題目或附上圖片】</textarea>
-          </div>
-        </div>
+          </span>
+        </span></p>
       </div>
 
     </section>

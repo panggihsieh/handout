@@ -1076,19 +1076,19 @@ h1 {
 }
 
 /* JSON 提示詞可在滑鼠移入、鍵盤聚焦或點擊時展開。 */
-.json-prompt { position: relative; margin-top: 10px; }
+.json-prompt { position: relative; display: inline-block; margin-left: 8px; vertical-align: baseline; line-height: 1; }
 .json-prompt-trigger {
-  display: inline-block; padding: 9px 16px; cursor: pointer;
+  display: inline-block; padding: 0 7px; cursor: pointer; line-height: 1;
   background: #ffad42; color: #111; border: 2px solid #111;
-  border-radius: 6px; box-shadow: 3px 3px 0 #111; font-weight: 700;
+  border-radius: 4px; box-shadow: 2px 2px 0 #111; font-weight: 700;
   list-style: none;
 }
 .json-prompt-trigger::-webkit-details-marker { display: none; }
 .json-prompt-trigger:focus-visible { outline: 3px solid #2563eb; outline-offset: 5px; }
 .json-prompt-panel {
-  display: none; position: absolute; left: 0; top: 100%; z-index: 30;
+  display: none; position: absolute; right: 0; top: 100%; z-index: 30;
   width: min(680px, calc(100vw - 80px)); box-sizing: border-box;
-  padding: 16px; background: #fff9ed; color: #111;
+  padding: 16px; background: #fff9ed; color: #111; line-height: 1.5;
   border: 2px solid #111; border-radius: 8px; box-shadow: 4px 5px 14px #0003;
 }
 .json-prompt:hover > .json-prompt-panel,
@@ -1102,3 +1102,11 @@ h1 {
 
 .controls { position: relative; z-index: 5; }
 .json-prompt-trigger { font: inherit; font-weight: 700; }
+
+.helper-text .json-prompt-trigger { font-size: inherit; line-height: 1; }
+@media (max-width: 600px) { .json-prompt-panel { position: fixed; left: 32px; right: 32px; top: 20vh; } }
+
+.helper-card { position: relative; }
+.json-prompt { position: static; }
+.json-prompt-panel { left: 18px; right: auto; top: calc(100% - 16px); width: min(680px, calc(100% - 36px)); }
+@media (max-width: 600px) { .json-prompt-panel { position: absolute; } }
