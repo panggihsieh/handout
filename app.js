@@ -29,6 +29,7 @@ const cellFontScales = new Map();
 const cellBindings = new Map();
 let activeCellIndex = null;
 let activePasteMode = null;
+const pageCountsByMode = new Map();
 
 const titleInput = document.querySelector("#titleInput");
 const classInput = document.querySelector("#classInput");
@@ -142,7 +143,7 @@ function collectSettings() {
     studentName: nameInput.value.trim(),
     date: dateInput.value || getTodayLocalDateValue(),
     startNumber: clampNumber(startNumberInput.value, 1, 1000000, DEFAULT_SETTINGS.startNumber),
-    pageCount: clampNumber(pageCountInput.value, 1, 50, DEFAULT_SETTINGS.pageCount),
+    pageCount: clampNumber(pageCountInput.value, 1, getTwoQuestionsEnabled() ? 50 : 100, DEFAULT_SETTINGS.pageCount),
     columnCount: 2,
     rowCount: clampNumber(rowCountInput.value, 1, 12, DEFAULT_SETTINGS.rowCount),
     fontScale: currentFontScale,
@@ -175,6 +176,7 @@ function updateAnswerVisibility(showAnswers) {
 
 function updateTwoQuestionMode(enabled) {
   pagesRoot.classList.toggle("two-questions", enabled);
+  pageCountInput.max = enabled ? "50" : "100";
   twoQuestionToggle.textContent = enabled ? "on" : "off";
   twoQuestionToggle.setAttribute("aria-pressed", String(enabled));
   twoQuestionToggle.setAttribute("aria-label", `左右皆為題目：${enabled ? "開啟" : "關閉"}`);
@@ -701,15 +703,13 @@ function renderPages() {
   const studentName = withFallback(settings.studentName, "________________");
   const displayDate = formatDisplayDate(settings.date);
   const cellsPerPage = settings.rowCount;
-  const totalCells = settings.pageCount * cellsPerPage;
-  const questionsPerPage = cellsPerPage * (settings.twoQuestions ? 2 : 1);
+  const columns = settings.twoQuestions ? 2 : 1;
+  const questionsPerPage = cellsPerPage * columns;
+  const totalCells = settings.pageCount * questionsPerPage;
   const layoutLabel = `${settings.twoQuestions ? "雙欄" : "單欄"} / 每頁 ${questionsPerPage} 題`;
 
-  if (activeCellIndex !== null) {
-    const activeRow = typeof activeCellIndex === "string" ? Number(activeCellIndex.slice(6)) : activeCellIndex;
-    if (activeRow >= totalCells || (typeof activeCellIndex === "string" && !settings.twoQuestions)) {
-      activeCellIndex = null;
-    }
+  if (activeCellIndex !== null && activeCellIndex >= totalCells) {
+    activeCellIndex = null;
   }
 
   pagesRoot.replaceChildren();
@@ -736,7 +736,7 @@ function renderPages() {
     pageName.textContent = studentName;
     pageDate.textContent = displayDate;
     pageMeta.textContent = `第 ${pageIndex + 1} / ${settings.pageCount} 頁`;
-    grid.style.gridTemplateColumns = `repeat(${settings.twoQuestions ? 2 : 1}, minmax(0, 1fr))`;
+    grid.style.gridTemplateColumns = `repeat(${columns}, minmax(0, 1fr))`;
     grid.style.gridTemplateRows = `repeat(${settings.rowCount}, minmax(0, 1fr))`;
 
     if (pageIndex > 0) {
@@ -745,16 +745,15 @@ function renderPages() {
     }
 
     for (let cellIndex = 0; cellIndex < cellsPerPage; cellIndex += 1) {
-      const itemIndex = pageIndex * cellsPerPage + cellIndex;
-      for (let side = 0; side < (settings.twoQuestions ? 2 : 1); side += 1) {
+      for (let side = 0; side < columns; side += 1) {
         const cellFragment = cellTemplate.content.cloneNode(true);
         const cellElement = cellFragment.querySelector(".cell");
-        const number = settings.startNumber + pageIndex * questionsPerPage + cellIndex * (settings.twoQuestions ? 2 : 1) + side;
-        const itemKey = side === 0 ? itemIndex : `right:${itemIndex}`;
+        const itemIndex = pageIndex * questionsPerPage + cellIndex * columns + side;
+        const number = settings.startNumber + itemIndex;
 
         cellFragment.querySelector(".cell-number").textContent = number;
         cellFragment.querySelector(".work-pane-number").textContent = number;
-        bindCell(cellElement, itemKey);
+        bindCell(cellElement, itemIndex);
         grid.appendChild(cellFragment);
       }
     }
@@ -781,7 +780,16 @@ answerToggle.addEventListener("click", () => {
 });
 
 twoQuestionToggle.addEventListener("click", () => {
-  updateTwoQuestionMode(!getTwoQuestionsEnabled());
+  const wasDual = getTwoQuestionsEnabled();
+  const currentPages = collectSettings().pageCount;
+  const nextDual = !wasDual;
+  pageCountsByMode.set(wasDual, currentPages);
+  const preferredPages = pageCountsByMode.get(nextDual) ?? (nextDual ? Math.ceil(currentPages / 2) : currentPages);
+  const lastOccupied = Math.max(-1, ...cellItems.keys(), ...cellAnswers.keys());
+  const rowsPerPage = clampNumber(rowCountInput.value, 1, 12, DEFAULT_SETTINGS.rowCount);
+  const requiredPages = Math.ceil((lastOccupied + 1) / (rowsPerPage * (nextDual ? 2 : 1)));
+  pageCountInput.value = Math.max(1, preferredPages, requiredPages);
+  updateTwoQuestionMode(nextDual);
   activeCellIndex = null;
   activePasteMode = null;
   renderPages();
@@ -792,6 +800,7 @@ resetButton.addEventListener("click", () => {
   cellItems.clear();
   cellAnswers.clear();
   cellFontScales.clear();
+  pageCountsByMode.clear();
   activeCellIndex = null;
   applySettings({ ...DEFAULT_SETTINGS });
   renderPages();
