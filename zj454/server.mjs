@@ -3,7 +3,7 @@ import express from "express";
 import { fileURLToPath } from "node:url";
 import { callProvider, normalizeSettings } from "./providers.mjs";
 
-import { solutionInstructions, solutionSchema, validateSolution } from "./public/solution-spec.js";
+import { solutionInstructions, solutionSchema, parseSolution } from "./public/solution-spec.js";
 
 const app = express();
 const PORT = Number(process.env.PORT || 5185);
@@ -69,7 +69,7 @@ app.post("/api/solve", async (req,res) => {
     if(text && (typeof text!=='string'||text.length>50000)) return res.status(400).json({error:"題目文字過長。"});
     if(image && (typeof image!=='string'||!/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/i.test(image)||image.length>10*1024*1024)) return res.status(400).json({error:"圖片格式或大小不符合限制。"});
     const output=await callProvider(config,{text,image,instructions:solutionInstructions,schema:solutionSchema});
-    res.json(validateSolution(JSON.parse(output)));
+    res.json(parseSolution(output));
   }catch(error){res.status(error.status||422).json({error:error.safeMessage||"AI 解答失敗，請檢查 API 設定或題目內容。"});}
 });
 

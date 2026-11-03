@@ -1,5 +1,5 @@
 import { verifyAndSeal, openSettings } from './vault.js';
-import { convertQuestion, testConnection, usesLocalBackend, solveQuestion } from './api-client.js?v=20261104-answer';
+import { convertQuestion, testConnection, usesLocalBackend, solveQuestion } from './api-client.js?v=20261104-solution-fix';
 const $ = id => document.getElementById(id);
 const presets = { openai: 'gpt-4.1', gemini: 'gemini-2.5-flash', deepseek: 'deepseek-flash', qwen: 'qwen3-vl-plus' };
 const prefix = 'handout-api-vault-v1:';

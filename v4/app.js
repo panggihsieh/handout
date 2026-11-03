@@ -1088,7 +1088,7 @@ copyJsonPromptButton.addEventListener("click", () => {
   const frame = document.querySelector("#mathJsonFrame");
   if (!frame.getAttribute("src")) {
     const local = ["127.0.0.1", "localhost"].includes(location.hostname);
-    frame.src = local ? "http://127.0.0.1:5185/?v=20261104-progress" : "../zj454/public/index.html?v=20261104-progress";
+    frame.src = local ? "http://127.0.0.1:5185/?v=20261104-solution-fix" : "../zj454/public/index.html?v=20261104-solution-fix";
   }
   mathJsonDialog.showModal();
 });
@@ -1097,7 +1097,7 @@ document.querySelector("#closeMathJsonDialog").addEventListener("click", () => m
 function fitAnswerText(container,textBlock) {
   if(!container.clientWidth||!container.clientHeight)return;
   textBlock.style.lineHeight='1.28';
-  const max=getQuestionBaseSize(currentFontScale)*parseFloat(getComputedStyle(document.documentElement).fontSize);
+  const max=2*(currentFontScale/120)*parseFloat(getComputedStyle(document.documentElement).fontSize);
   let low=.5,high=max;
   for(let i=0;i<14;i++){
     const size=(low+high)/2;textBlock.style.fontSize=size+'px';
@@ -1111,6 +1111,8 @@ const answerResizeObserver=new ResizeObserver(entries=>entries.forEach(({target}
 function observeAnswers(){answerResizeObserver.disconnect();document.querySelectorAll('.work-answer-content').forEach(node=>answerResizeObserver.observe(node));}
 observeAnswers();new MutationObserver(observeAnswers).observe(pagesRoot,{childList:true,subtree:true});
 document.fonts.ready.then(refreshQuestionTextSizing);
+window.addEventListener('beforeprint',refreshQuestionTextSizing);
+window.addEventListener('afterprint',()=>requestAnimationFrame(refreshQuestionTextSizing));
 
 async function ensureAnswerModule(){
   const frame=document.querySelector('#mathJsonFrame');
@@ -1120,7 +1122,7 @@ async function ensureAnswerModule(){
     frame.addEventListener('load',()=>{clearTimeout(timeout);frame.dataset.ready='true';resolve();},{once:true});
     if(!frame.getAttribute('src')){
       const local=['127.0.0.1','localhost'].includes(location.hostname);
-      frame.src=local?'http://127.0.0.1:5185/?v=20261104-progress':'../zj454/public/index.html?v=20261104-progress';
+      frame.src=local?'http://127.0.0.1:5185/?v=20261104-solution-fix':'../zj454/public/index.html?v=20261104-solution-fix';
     }
   });return frame;
 }
@@ -1157,6 +1159,7 @@ document.querySelector('#aiAnswerButton').addEventListener('click',async()=>{
   if(!jobs.length){status.textContent='沒有待解答的題目（已有解答的格子會保留）。';return;}
   button.disabled=true;let completed=0;
   try{
+    updateAnswerVisibility(true);saveSettings(collectSettings());
     const frame=await ensureAnswerModule();
     for(const [index,item] of jobs){
       status.textContent=`AI 解答中 ${completed+1}/${jobs.length}（可能計費）…`;

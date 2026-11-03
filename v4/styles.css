@@ -1121,5 +1121,6 @@ h1 {
 .work-answer-text .katex-display { margin:.25em 0; }
 
 .work-answer-text { height:auto; }
+.work-answer-text { width:100%; max-width:100%; }
 .work-answer-text p,.work-answer-text ul,.work-answer-text ol,.work-answer-text blockquote { margin:0 0 .35em; }
 .work-answer-text ul,.work-answer-text ol { padding-left:1.25em; }

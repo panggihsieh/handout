@@ -1,4 +1,4 @@
-import { solutionInstructions, solutionSchema, validateSolution } from './solution-spec.js';
+import { solutionInstructions, solutionSchema, validateSolution, parseSolution } from './solution-spec.js?v=20261104-solution-fix';
 import { normalizeSettings, callProvider } from './providers.js';
 import { instructions, responseSchema } from './question-spec.js';
 export const usesLocalBackend = ['127.0.0.1', 'localhost'].includes(location.hostname) && location.port === '5185';
@@ -28,5 +28,5 @@ export async function convertQuestion(settings, { text, image }) {
 export async function solveQuestion(settings,{text,image}) {
   if(usesLocalBackend)return validateSolution(await backend('/api/solve',{settings,text,image}));
   const output=await direct(settings,{text,image,instructions:solutionInstructions,schema:solutionSchema});
-  return validateSolution(JSON.parse(output));
+  return parseSolution(output);
 }

@@ -49,7 +49,7 @@ dialog{width:min(900px,calc(100vw - 32px));max-height:85vh;overflow:auto;border:
 <section class="panel"><h2>③ 渲染預覽</h2><p id="previewState" class="sync-state" role="status">等待 JSON</p><button id="openPreview" type="button">彈跳預覽</button><button id="sample" type="button">載入測試題</button><div id="preview"></div></section>
 </main>
 <dialog id="previewDialog" aria-labelledby="previewDialogTitle"><div class="dialog-toolbar"><h2 id="previewDialogTitle">題目渲染預覽</h2><button id="closePreview" type="button">關閉</button></div><div id="popupPreview"></div></dialog>
-<script type="module" src="api-settings.js?v=20261104-answer"></script>
+<script type="module" src="api-settings.js?v=20261104-solution-fix"></script>
 <script>
 const $=id=>document.getElementById(id);let imageData=null;
 const report=s=>$('status').textContent=s;
