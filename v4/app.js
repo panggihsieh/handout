@@ -7,7 +7,7 @@ function getTodayLocalDateValue() {
 }
 
 const DEFAULT_SETTINGS = {
-  title: "梅山鄉大南國小",
+  title: "大南阿嬤國小",
   className: "",
   studentName: "",
   date: getTodayLocalDateValue(),
