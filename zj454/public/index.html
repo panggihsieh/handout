@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>數學題目 JSON 轉換與渲染</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js"></script>
+<style>
+*{box-sizing:border-box}body{margin:0;padding:24px;font-family:"Microsoft JhengHei",sans-serif;background:#f1f5f9;color:#1e293b}
+h1{font-size:24px}.workspace{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.panel{padding:18px;background:white;border:1px solid #dbe3ee;border-radius:14px;min-width:0}
+textarea{width:100%;min-height:330px;padding:12px;border:1px solid #cbd5e1;border-radius:8px;resize:vertical;font:14px/1.6 Consolas,monospace}
+button{background:#2563a1;color:white;border:0;border-radius:8px;padding:10px 14px;margin:8px 6px 0 0;cursor:pointer}button:disabled{opacity:.5}
+#preview{min-height:330px;border:1px solid #e2e8f0;border-radius:8px;padding:16px;font-size:19px;line-height:1.8}
+.question-block{margin:10px 0;white-space:pre-wrap}.math-block{overflow-x:auto}.svg-block svg{display:block;max-width:100%;height:auto;margin:auto}
+#imagePreview{max-width:100%;max-height:180px;margin-top:12px}#status{white-space:pre-wrap;margin:16px 0;color:#1d4f81}
+@media(max-width:960px){.workspace{grid-template-columns:1fr}}
+dialog{width:min(900px,calc(100vw - 32px));max-height:85vh;overflow:auto;border:1px solid #cbd5e1;border-radius:14px;padding:20px}dialog::backdrop{background:#0f172a88}.dialog-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px}.dialog-toolbar h2{margin:0}#popupPreview{font-size:19px;line-height:1.8}button:focus-visible,textarea:focus-visible{outline:3px solid #d97706;outline-offset:3px}
+</style>
+</head>
+<body>
+<h1>數學題目 JSON 轉換與渲染</h1>
+<p>文字／圖片 → AI 結構化 JSON → KaTeX + SVG；也可以直接貼上現有 JSON 預覽。</p>
+<div id="status" role="status">請輸入題目，或貼入現有 JSON。</div>
+<main class="workspace">
+<section class="panel"><h2>① 原始題目</h2><textarea id="source" placeholder="貼上數學題目文字..."></textarea><p>題目截圖：可在本頁按 Ctrl+V 貼上，或選擇圖片檔。</p><input id="image" type="file" accept="image/png,image/jpeg,image/webp"><img id="imagePreview" alt="題目截圖" hidden><p><button id="convert">AI 轉換 JSON</button></p></section>
+<section class="panel"><h2>② JSON</h2><textarea id="json" spellcheck="false" placeholder='{"blocks":[]}'></textarea><p><button id="render">渲染 JSON</button><button id="copy">複製 JSON</button></p></section>
+<section class="panel"><h2>③ 渲染預覽</h2><button id="openPreview" type="button">彈跳預覽</button><button id="sample" type="button">載入測試題</button><div id="preview"></div></section>
+</main>
+<dialog id="previewDialog" aria-labelledby="previewDialogTitle"><div class="dialog-toolbar"><h2 id="previewDialogTitle">題目渲染預覽</h2><button id="closePreview" type="button">關閉</button></div><div id="popupPreview"></div></dialog>
+<script>
+const $=id=>document.getElementById(id);let imageData=null;
+const report=s=>$('status').textContent=s;
+function validate(data){
+ if(!data||!Array.isArray(data.blocks)||!data.blocks.length||Object.keys(data).join()!=='blocks')throw Error('最外層必須只有非空 blocks 陣列。');
+ for(const b of data.blocks){
+  if(!b||Object.keys(b).sort().join()!=='type,value'||!['text','latex','svg'].includes(b.type)||typeof b.value!=='string'||!b.value.trim())throw Error('每個區塊只能有 type 與非空 value。');
+  if(b.type==='svg'){
+   const doc=new DOMParser().parseFromString(b.value,'image/svg+xml'),root=doc.documentElement;
+   if(root.localName!=='svg'||root.namespaceURI!=='http://www.w3.org/2000/svg'||!root.hasAttribute('viewBox')||doc.querySelector('parsererror'))throw Error('SVG 缺少 xmlns、viewBox 或有語法錯誤。');
+  }
+ }
+ return data;
+}
+function renderQuestion(data){
+ validate(data);if(!window.katex||!window.DOMPurify)throw Error('KaTeX 或 SVG 安全套件尚未載入，請確認網路。');
+ const preview=$('preview');preview.replaceChildren();
+ for(const b of data.blocks){
+  const node=document.createElement('div');node.className='question-block';
+  if(b.type==='text')node.textContent=b.value;
+  if(b.type==='latex'){node.classList.add('math-block');katex.render(b.value,node,{displayMode:true,throwOnError:true,trust:false});}
+  if(b.type==='svg'){
+   node.classList.add('svg-block');
+   const safe=DOMPurify.sanitize(b.value,{USE_PROFILES:{svg:true},FORBID_TAGS:['script','foreignObject','image','use','style','animate','set'],FORBID_ATTR:['href','xlink:href','src']});
+   const doc=new DOMParser().parseFromString(safe,'image/svg+xml');
+   if(doc.documentElement.localName!=='svg'||!doc.documentElement.hasAttribute('viewBox'))throw Error('SVG 安全檢查未通過。');
+   node.appendChild(document.importNode(doc.documentElement,true));
+  }
+  preview.appendChild(node);
+ }
+ report('JSON 驗證及題目渲染完成。請人工核對數學條件。');
+}
+function loadImage(file){
+ if(!['image/png','image/jpeg','image/webp'].includes(file.type)||file.size>7*1024*1024){report('僅接受 7 MB 以下 PNG、JPEG 或 WebP 圖片。');return;}
+ const reader=new FileReader();reader.onerror=()=>report('圖片讀取失敗，請重試。');reader.onload=()=>{imageData=reader.result;$('imagePreview').src=imageData;$('imagePreview').hidden=false;report('圖片已載入，可按「AI 轉換 JSON」。');};reader.readAsDataURL(file);
+}
+$('image').addEventListener('change',e=>{const file=e.target.files[0];if(file)loadImage(file);});
+document.addEventListener('paste',e=>{
+ const item=Array.from(e.clipboardData?.items||[]).find(item=>item.type.startsWith('image/'));
+ if(!item)return;
+ e.preventDefault();const file=item.getAsFile();if(file)loadImage(file);
+});
+$('openPreview').addEventListener('click',()=>{
+ try{renderQuestion(JSON.parse($('json').value));$('popupPreview').replaceChildren($('preview').cloneNode(true));$('popupPreview').firstChild.removeAttribute('id');$('previewDialog').showModal();}catch(e){report('預覽失敗：'+e.message);}
+});
+$('closePreview').addEventListener('click',()=>$('previewDialog').close());
+$('sample').addEventListener('click',()=>{
+ const data={blocks:[{type:'text',value:'長方形的長是 8 公分，寬是 5 公分，面積是多少平方公分？'},{type:'latex',value:'A = 8 '+String.fromCharCode(92)+'times 5 = '+String.fromCharCode(92)+'underline{'+String.fromCharCode(92)+'qquad}'},{type:'svg',value:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 150"><rect x="40" y="30" width="160" height="100" fill="none" stroke="black" stroke-width="2"/><text x="120" y="20" text-anchor="middle" font-size="16">8 公分</text><text x="205" y="85" font-size="14">5</text></svg>'}]};
+ $('json').value=JSON.stringify(data,null,2);try{renderQuestion(data);}catch(e){report(e.message);}
+});
+$('convert').addEventListener('click',async()=>{
+ const button=$('convert');button.disabled=true;
+ try{report('正在轉換...');const r=await fetch('/api/convert',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:$('source').value,image:imageData})});const data=await r.json();if(!r.ok)throw Error(data.error||'轉換失敗');validate(data);$('json').value=JSON.stringify(data,null,2);renderQuestion(data);}catch(e){report('轉換失敗：'+e.message);}finally{button.disabled=false;}
+});
+$('render').addEventListener('click',()=>{try{renderQuestion(JSON.parse($('json').value));}catch(e){report('渲染失敗：'+e.message);}});
+$('copy').addEventListener('click',async()=>{try{const obj=validate(JSON.parse($('json').value));await navigator.clipboard.writeText(JSON.stringify(obj,null,2));report('JSON 已複製。');}catch(e){report('複製失敗：'+e.message);}});
+</script>
+</body></html>
