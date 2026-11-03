@@ -1088,7 +1088,7 @@ copyJsonPromptButton.addEventListener("click", () => {
   const frame = document.querySelector("#mathJsonFrame");
   if (!frame.getAttribute("src")) {
     const local = ["127.0.0.1", "localhost"].includes(location.hostname);
-    frame.src = local ? "http://127.0.0.1:5185/" : "../zj454/public/index.html";
+    frame.src = local ? "http://127.0.0.1:5185/?v=20261103-notice2" : "../zj454/public/index.html?v=20261103-notice2";
   }
   mathJsonDialog.showModal();
 });
