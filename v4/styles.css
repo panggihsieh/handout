@@ -470,6 +470,14 @@ h1 {
   padding: 4px 0 6px;
 }
 
+.work-pane-body.has-answer {
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.work-pane-body.has-answer > .work-answer-toolbar {
+  display: none;
+}
+
 .work-answer-content {
   width: 100%;
   min-height: 0;

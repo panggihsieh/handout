@@ -518,6 +518,7 @@ function renderCellContent(container, pane, item, cellIndex = null) {
 }
 
 function renderAnswerContent(container, item) {
+  container.closest(".work-pane-body").classList.toggle("has-answer", Boolean(item?.value));
   container.replaceChildren();
 
   if (!item?.value) {
