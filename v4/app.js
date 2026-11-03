@@ -1090,6 +1090,7 @@ copyJsonPromptButton.addEventListener("click", async () => {
     await navigator.clipboard.writeText(promptText.value);
     status.textContent = "已複製";
   } catch {
+    promptText.hidden = false;
     promptText.focus();
     promptText.select();
     status.textContent = "請按 Ctrl+C 複製已選取的提示詞";

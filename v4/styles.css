@@ -1098,3 +1098,8 @@ h1 {
   border-radius: 4px;
   font: 13px/1.6 monospace;
 }
+
+/* 僅顯示複製操作，提示詞保留供按鈕讀取。 */
+.json-prompt-panel { height: auto; }
+.json-prompt-panel .json-prompt-heading { margin-bottom: 0; }
+#jsonPromptText[hidden] { display: none; }
