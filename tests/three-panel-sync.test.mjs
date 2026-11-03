@@ -3,9 +3,9 @@ import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
 const html=readFileSync(new URL('../zj454/public/index.html',import.meta.url),'utf8');
 const script=html.split('<script>')[1].split('</script>')[0];
-const elements=new Map(),timers=new Map();let timerId=0;
-function element(id){if(!elements.has(id))elements.set(id,{value:'',textContent:'',dataset:{},disabled:false,hidden:true,events:{},addEventListener(name,fn){this.events[name]=fn;},removeAttribute(name){delete this[name];}});return elements.get(id);}
-const context=vm.createContext({document:{getElementById:element,querySelectorAll:()=>[],addEventListener(){}},window:{getMathApiSettings:()=>({provider:'fake'})},setTimeout:fn=>{timers.set(++timerId,fn);return timerId;},clearTimeout:id=>timers.delete(id),FileReader:class{}});
+const elements=new Map(),timers=new Map(),intervals=new Map();let timerId=0,now=0;
+function element(id){if(!elements.has(id))elements.set(id,{value:'',textContent:'',dataset:{},disabled:false,hidden:true,events:{},style:{setProperty(name,value){this[name]=value;}},setAttribute(name,value){this[name]=value;},addEventListener(name,fn){this.events[name]=fn;},removeAttribute(name){delete this[name];}});return elements.get(id);}
+const context=vm.createContext({Date:{now:()=>now},document:{getElementById:element,querySelectorAll:()=>[],addEventListener(){}},window:{getMathApiSettings:()=>({provider:'fake'})},setTimeout:fn=>{timers.set(++timerId,fn);return timerId;},clearTimeout:id=>timers.delete(id),setInterval:fn=>{intervals.set(++timerId,fn);return timerId;},clearInterval:id=>intervals.delete(id),FileReader:class{}});
 vm.runInContext(script,context);
 // Render implementation is covered by the four-image browser test; isolate UI synchronization here.
 vm.runInContext(`renderQuestion=data=>{if(!data.blocks?.length)throw Error('empty blocks');$('preview').textContent=data.blocks.map(b=>b.value).join('|');};`,context);
@@ -20,7 +20,20 @@ element('sample').events.click();assert.match(element('source').value,/8 公分/
 let finish;
 context.window.convertMathQuestion=()=>new Promise(resolve=>finish=resolve);
 const pending=element('convert').events.click();
+assert.equal(element('conversionPercent').textContent,'0%');assert.equal(intervals.size,1);
+now=30000;for(const tick of intervals.values())tick();
+assert.equal(element('conversionPercent').textContent,'47%');assert.match(element('conversionCountdown').textContent,/30 秒/);
+now=90000;for(const tick of intervals.values())tick();
+assert.equal(element('conversionPercent').textContent,'95%');assert.match(element('conversionCountdown').textContent,/超出預估.*90 秒/);
 element('source').value='請勿覆蓋';input('source');
 finish({blocks:[{type:'text',value:'過期回覆'}]});await pending;
 assert.equal(element('source').value,'請勿覆蓋');assert.ok(!element('json').value.includes('過期回覆'));assert.match(element('status').textContent,/未套用/);
-console.log('Source stale state, live JSON rendering, invalid JSON preservation, sample synchronization and stale API results: passed');
+assert.equal(intervals.size,0);assert.equal(element('conversionProgress').dataset.state,'stale');
+context.window.convertMathQuestion=async()=>({blocks:[{type:'text',value:'完成的題目'}]});
+await element('convert').events.click();
+assert.equal(element('conversionPercent').textContent,'100%');assert.equal(intervals.size,0);assert.equal(element('convert').disabled,false);
+context.window.convertMathQuestion=async()=>{throw Error('測試網路錯誤');};
+await element('convert').events.click();
+assert.equal(element('conversionProgress').dataset.state,'error');assert.notEqual(element('conversionPercent').textContent,'100%');assert.equal(intervals.size,0);assert.equal(element('convert').disabled,false);
+assert.match(element('status').textContent,/測試網路錯誤/);
+console.log('Three-panel sync, estimated progress/countdown, overtime cap, success, error and stale-response timer cleanup: passed');
