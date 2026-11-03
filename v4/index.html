@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Latex數學-圖文練習簿 v4</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
-  <link rel="stylesheet" href="styles.css?v=dialog-20261103-json-prompt-static">
+  <link rel="stylesheet" href="styles.css?v=20261104-ai-answer">
 </head>
 <body>
   <div class="app-shell">
@@ -89,6 +89,8 @@
             <span class="json-prompt-heading">
               <strong>截圖轉 JSON 工具</strong>
               <button id="copyJsonPromptButton" type="button" aria-haspopup="dialog">JSON 轉換與預覽</button>
+              <button id="aiAnswerButton" type="button" title="使用已解鎖的 API 解答左側題目，可能計費">AI 解答</button>
+              <span id="aiAnswerStatus" role="status"></span>
               <span id="jsonPromptCopyStatus" role="status"></span>
             </span>
             <textarea id="jsonPromptText" hidden readonly aria-label="JSON 生成提示詞" spellcheck="false">請將題目轉成我的練習簿 Web App 支援的 JSON。
@@ -203,6 +205,6 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
-  <script src="app.js?v=20261103-notice2"></script>
+  <script src="app.js?v=20261104-ai-answer"></script>
 </body>
 </html>

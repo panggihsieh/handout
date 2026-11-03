@@ -3,6 +3,8 @@ import express from "express";
 import { fileURLToPath } from "node:url";
 import { callProvider, normalizeSettings } from "./providers.mjs";
 
+import { solutionInstructions, solutionSchema, validateSolution } from "./public/solution-spec.js";
+
 const app = express();
 const PORT = Number(process.env.PORT || 5185);
 // 僅允許本機頁面使用帶金鑰的 JSON 請求，避免跨網站呼叫或 DNS rebinding。
@@ -57,6 +59,18 @@ app.post("/api/convert", async (req, res) => {
     // 不記錄或回傳供應商原始錯誤，避免金鑰或題目被寫入日誌。
     res.status(error.status || 422).json({ error: error.safeMessage || (error instanceof SyntaxError ? "模型未傳回有效 JSON，請重試。" : "轉換失敗：請確認 API 設定、額度與輸出格式。") });
   }
+});
+
+app.post("/api/solve", async (req,res) => {
+  try {
+    const { settings,text,image } = req.body ?? {};
+    const config=normalizeSettings(settings);
+    if((typeof text!=='string'||!text.trim())&&!image) return res.status(400).json({error:"沒有可解答的題目。"});
+    if(text && (typeof text!=='string'||text.length>50000)) return res.status(400).json({error:"題目文字過長。"});
+    if(image && (typeof image!=='string'||!/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/i.test(image)||image.length>10*1024*1024)) return res.status(400).json({error:"圖片格式或大小不符合限制。"});
+    const output=await callProvider(config,{text,image,instructions:solutionInstructions,schema:solutionSchema});
+    res.json(validateSolution(JSON.parse(output)));
+  }catch(error){res.status(error.status||422).json({error:error.safeMessage||"AI 解答失敗，請檢查 API 設定或題目內容。"});}
 });
 
 app.post("/api/test", async (req, res) => {

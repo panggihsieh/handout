@@ -1,5 +1,5 @@
 import { verifyAndSeal, openSettings } from './vault.js';
-import { convertQuestion, testConnection, usesLocalBackend } from './api-client.js';
+import { convertQuestion, testConnection, usesLocalBackend, solveQuestion } from './api-client.js?v=20261104-answer';
 const $ = id => document.getElementById(id);
 const presets = { openai: 'gpt-4.1', gemini: 'gemini-2.5-flash', deepseek: 'deepseek-flash', qwen: 'qwen3-vl-plus' };
 const prefix = 'handout-api-vault-v1:';
@@ -66,3 +66,17 @@ window.convertMathQuestion = convertQuestion;
 $('apiMode').textContent = usesLocalBackend ? '本機模式：由本機服務代送 API 請求。' : '線上模式：瀏覽器直接向供應商送出請求；需供應商允許跨來源連線（CORS）。金鑰僅在解鎖後於記憶體中使用。';
 
 if (usesLocalBackend) $("caseComparisonLink").href = "http://127.0.0.1:5184/tests/four-images.html";
+
+// 金鑰只留在模組內；父頁僅收到解答。
+window.addEventListener('message',async event=>{
+  const allowed=new Set([location.origin,'http://127.0.0.1:5184','http://localhost:5184']);
+  if(event.source!==parent||parent===window||!allowed.has(event.origin)||event.data?.type!=='handout-solve')return;
+  const {id,question}=event.data;
+  if(typeof id!=='string'||id.length>100)return;
+  try{
+    const settings=window.getMathApiSettings();
+    if(!question||(typeof question.text!=='string')||question.text.length>50000||(question.image&&(!/^data:image\/(png|jpeg|webp);base64,/.test(question.image)||question.image.length>10*1024*1024)))throw Error('題目資料不符合限制。');
+    const result=await solveQuestion(settings,question);
+    event.source.postMessage({type:'handout-solved',id,result},event.origin);
+  }catch(error){event.source.postMessage({type:'handout-solved',id,error:error.safeMessage||error.message||'AI 解答失敗'},event.origin);}
+});

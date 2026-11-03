@@ -1,3 +1,4 @@
+import { solutionInstructions, solutionSchema, validateSolution } from './solution-spec.js';
 import { normalizeSettings, callProvider } from './providers.js';
 import { instructions, responseSchema } from './question-spec.js';
 export const usesLocalBackend = ['127.0.0.1', 'localhost'].includes(location.hostname) && location.port === '5185';
@@ -22,4 +23,10 @@ export async function convertQuestion(settings, { text, image }) {
   if (!text?.trim() && !image) throw Error('請輸入題目文字或上傳圖片。');
   const output = await direct(settings, { text, image, instructions, schema: responseSchema });
   try { return JSON.parse(output); } catch { throw Error('模型沒有傳回有效 JSON，請重試。'); }
+}
+
+export async function solveQuestion(settings,{text,image}) {
+  if(usesLocalBackend)return validateSolution(await backend('/api/solve',{settings,text,image}));
+  const output=await direct(settings,{text,image,instructions:solutionInstructions,schema:solutionSchema});
+  return validateSolution(JSON.parse(output));
 }

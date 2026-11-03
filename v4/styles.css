@@ -1113,3 +1113,13 @@ h1 {
 #mathJsonFrame { flex: 1; width: 100%; min-height: 0; border: 1px solid #ddd; border-radius: 8px; background: white; }
 .math-json-dialog-note { margin: 0; font-size: 12px; color: #6b7280; }
 @media print { #mathJsonDialog { display: none !important; } }
+
+#aiAnswerButton { padding:6px 12px; border:1px solid #9a3412; border-radius:6px; background:#ffad42; color:#111; font:inherit; cursor:pointer; }
+#aiAnswerButton:disabled { opacity:.5; cursor:wait; }
+#aiAnswerStatus { font-size:13px; line-height:1.5; }
+.work-answer-text { overflow-wrap:anywhere; }
+.work-answer-text .katex-display { margin:.25em 0; }
+
+.work-answer-text { height:auto; }
+.work-answer-text p,.work-answer-text ul,.work-answer-text ol,.work-answer-text blockquote { margin:0 0 .35em; }
+.work-answer-text ul,.work-answer-text ol { padding-left:1.25em; }

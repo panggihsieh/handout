@@ -537,7 +537,7 @@ function renderAnswerContent(container, item) {
   textBlock.className = "problem-text work-answer-text";
   renderMathMarkdown(textBlock, item.value);
   container.appendChild(textBlock);
-  requestAnimationFrame(() => fitQuestionText(container, textBlock, currentFontScale));
+  requestAnimationFrame(() => fitAnswerText(container, textBlock));
 }
 
 function refreshQuestionTextSizing() {
@@ -551,7 +551,7 @@ function refreshQuestionTextSizing() {
 
     const answerText = answerContent.querySelector(".work-answer-text");
     if (answerText) {
-      fitQuestionText(answerContent, answerText, currentFontScale);
+      fitAnswerText(answerContent, answerText);
     }
   });
 }
@@ -1088,8 +1088,84 @@ copyJsonPromptButton.addEventListener("click", () => {
   const frame = document.querySelector("#mathJsonFrame");
   if (!frame.getAttribute("src")) {
     const local = ["127.0.0.1", "localhost"].includes(location.hostname);
-    frame.src = local ? "http://127.0.0.1:5185/?v=20261103-notice2" : "../zj454/public/index.html?v=20261103-notice2";
+    frame.src = local ? "http://127.0.0.1:5185/?v=20261104-answer" : "../zj454/public/index.html?v=20261104-answer";
   }
   mathJsonDialog.showModal();
 });
 document.querySelector("#closeMathJsonDialog").addEventListener("click", () => mathJsonDialog.close());
+
+function fitAnswerText(container,textBlock) {
+  if(!container.clientWidth||!container.clientHeight)return;
+  textBlock.style.lineHeight='1.28';
+  const max=getQuestionBaseSize(currentFontScale)*parseFloat(getComputedStyle(document.documentElement).fontSize);
+  let low=.5,high=max;
+  for(let i=0;i<14;i++){
+    const size=(low+high)/2;textBlock.style.fontSize=size+'px';
+    if(textBlock.scrollHeight<=container.clientHeight&&textBlock.scrollWidth<=container.clientWidth&&!Array.from(textBlock.querySelectorAll('.katex-display')).some(node=>node.scrollWidth>node.clientWidth))low=size;else high=size;
+  }
+  textBlock.style.fontSize=low+'px';
+}
+const answerResizeObserver=new ResizeObserver(entries=>entries.forEach(({target})=>{
+  const text=target.querySelector('.work-answer-text');if(text)fitAnswerText(target,text);
+}));
+function observeAnswers(){answerResizeObserver.disconnect();document.querySelectorAll('.work-answer-content').forEach(node=>answerResizeObserver.observe(node));}
+observeAnswers();new MutationObserver(observeAnswers).observe(pagesRoot,{childList:true,subtree:true});
+document.fonts.ready.then(refreshQuestionTextSizing);
+
+async function ensureAnswerModule(){
+  const frame=document.querySelector('#mathJsonFrame');
+  if(frame.dataset.ready==='true')return frame;
+  await new Promise((resolve,reject)=>{
+    const timeout=setTimeout(()=>reject(Error('模組載入逾時，請先開啟 JSON 轉換與預覽。')),20000);
+    frame.addEventListener('load',()=>{clearTimeout(timeout);frame.dataset.ready='true';resolve();},{once:true});
+    if(!frame.getAttribute('src')){
+      const local=['127.0.0.1','localhost'].includes(location.hostname);
+      frame.src=local?'http://127.0.0.1:5185/?v=20261104-answer':'../zj454/public/index.html?v=20261104-answer';
+    }
+  });return frame;
+}
+document.querySelector('#mathJsonFrame').addEventListener('load',event=>event.target.dataset.ready='true');
+async function questionForAnswer(item){
+  if(item.type==='image')return {text:'請解答這張圖片中的題目。',image:item.value};
+  if(item.type!=='json')return {text:item.value,image:null};
+  const blocks=parseQuestionJson(item.value),figures=blocks.filter(b=>b.type==='svg');
+  if(!figures.length)return {text:JSON.stringify({blocks}),image:null};
+  const pictures=await Promise.all(figures.map(async block=>{
+    const image=new Image();image.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(block.value);await image.decode();return image;
+  }));
+  const canvas=document.createElement('canvas');canvas.width=900;canvas.height=pictures.length*500;
+  const ctx=canvas.getContext('2d');ctx.fillStyle='white';ctx.fillRect(0,0,canvas.width,canvas.height);
+  pictures.forEach((image,i)=>{const scale=Math.min(860/image.naturalWidth,460/image.naturalHeight);const w=image.naturalWidth*scale,h=image.naturalHeight*scale;ctx.drawImage(image,(900-w)/2,i*500+(500-h)/2,w,h);});
+  return {text:JSON.stringify({blocks}),image:canvas.toDataURL('image/png')};
+}
+function requestAiAnswer(frame,question){
+  return new Promise((resolve,reject)=>{
+    const id=crypto.randomUUID(),origin=new URL(frame.src,location.href).origin;
+    const timeout=setTimeout(()=>{window.removeEventListener('message',receive);reject(Error('解答逾時，請稍後重試。'));},200000);
+    function receive(event){
+      if(event.source!==frame.contentWindow||event.origin!==origin||event.data?.type!=='handout-solved'||event.data.id!==id)return;
+      clearTimeout(timeout);window.removeEventListener('message',receive);
+      if(event.data.error)reject(Error(event.data.error));else resolve(event.data.result);
+    }
+    window.addEventListener('message',receive);frame.contentWindow.postMessage({type:'handout-solve',id,question},origin);
+  });
+}
+document.querySelector('#aiAnswerButton').addEventListener('click',async()=>{
+  const button=document.querySelector('#aiAnswerButton'),status=document.querySelector('#aiAnswerStatus');
+  if(getTwoQuestionsEnabled()){status.textContent='請先關閉「左右皆為題目」，右側才能放解答。';return;}
+  const jobs=[...cellItems].filter(([index,item])=>item?.value&&cellBindings.has(index)&&!cellAnswers.has(index));
+  if(!jobs.length){status.textContent='沒有待解答的題目（已有解答的格子會保留）。';return;}
+  button.disabled=true;let completed=0;
+  try{
+    const frame=await ensureAnswerModule();
+    for(const [index,item] of jobs){
+      status.textContent=`AI 解答中 ${completed+1}/${jobs.length}（可能計費）…`;
+      const snapshot=JSON.stringify(item),question=await questionForAnswer(item),result=await requestAiAnswer(frame,question);
+      if(!result||!['solved','needs_review'].includes(result.status)||typeof result.answer!=='string'||!result.answer.trim())throw Error('解答格式錯誤。');
+      if(JSON.stringify(cellItems.get(index))!==snapshot||cellAnswers.has(index)||getTwoQuestionsEnabled())continue;
+      setCellAnswer(index,{type:'text',value:(result.status==='needs_review'?'待核對：':'')+result.answer});completed++;
+    }
+    status.textContent=`已填入 ${completed} 題解答，請核對內容。`;
+  }catch(error){status.textContent=`已填入 ${completed} 題；${error.message}`;if(/解鎖|金鑰|API 設定/.test(error.message))mathJsonDialog.showModal();}
+  finally{button.disabled=false;}
+});
