@@ -43,7 +43,7 @@ dialog{width:min(900px,calc(100vw - 32px));max-height:85vh;overflow:auto;border:
 <label id="qwenEndpointField" hidden>Qwen 官方 Base URL<input id="apiBaseURL" value="https://dashscope-intl.aliyuncs.com/compatible-mode/v1" spellcheck="false"><small>依帳號區域或 Workspace 網址設定；僅允許阿里雲官方端點。</small></label>
 <label>解鎖密碼<input id="vaultPassword" maxlength="256" type="password" autocomplete="off" placeholder="加密儲存時至少 8 個字元"></label>
 </div>
-<div><button id="unlockApiSettings" type="button">解鎖</button><button id="lockApiSettings" type="button">鎖定</button><button id="deleteApiSettings" type="button">刪除此供應商設定</button><button id="testApiSettings" type="button">測試成功後加密儲存（少量計費）</button></div>
+<div><button id="unlockApiSettings" type="button">解鎖並連線（少量計費）</button><button id="lockApiSettings" type="button">鎖定</button><button id="deleteApiSettings" type="button">刪除此供應商設定</button><button id="testApiSettings" type="button">測試成功後加密儲存（少量計費）</button></div>
 <p id="apiStatus" role="status"></p>
 <p class="api-note">測試成功後自動加密儲存並清空金鑰欄位，不提供顯示或複製金鑰。解鎖不會重新顯示金鑰；更換時請重新貼上並測試。密碼不保存。解鎖後按目前連線模式送出請求；按「AI 轉換」會將題目與截圖送至選定供應商並依其規則計費。加密保護儲存資料，無法防止解鎖時的惡意頁面腳本。忘記密碼需刪除設定並重新輸入金鑰。</p>
 </details>
@@ -57,7 +57,7 @@ dialog{width:min(900px,calc(100vw - 32px));max-height:85vh;overflow:auto;border:
 <dialog id="conversionErrorDialog" class="conversion-error-dialog" aria-labelledby="conversionErrorTitle"><div class="dialog-toolbar"><h2 id="conversionErrorTitle">AI 轉換失敗</h2><button id="closeConversionError" type="button">關閉</button></div><p>請依下方訊息檢查設定；也可複製訊息提供協助排查。</p><textarea id="conversionErrorText" readonly aria-label="完整錯誤訊息" spellcheck="false"></textarea><button id="copyConversionError" type="button">複製錯誤訊息</button><span id="conversionErrorCopyStatus" role="status"></span></dialog>
 <dialog id="previewDialog" aria-labelledby="previewDialogTitle"><div class="dialog-toolbar"><h2 id="previewDialogTitle">題目渲染預覽</h2><button id="closePreview" type="button">關閉</button></div><div id="popupPreview"></div></dialog>
 <dialog id="variantDialog" class="variant-dialog" aria-labelledby="variantDialogTitle"><div class="dialog-toolbar"><h2 id="variantDialogTitle">類似題 JSON 與預覽</h2><button id="closeVariant" type="button">關閉類似題</button></div><p class="variant-note">AI 檢核已通過，仍請人工核對數學條件與附圖。原題未覆蓋。</p><div class="variant-layout"><section><h3>新題目 JSON</h3><textarea id="variantJson" readonly aria-label="類似題 JSON" spellcheck="false"></textarea><button id="copyVariant" type="button">複製新 JSON</button><span id="variantCopyStatus" role="status"></span></section><section><h3>新題目預覽</h3><div id="variantPreview"></div></section></div></dialog>
-<script type="module" src="api-settings.js?v=20261104-ai-connection"></script>
+<script type="module" src="api-settings.js?v=20261104-ai-reconnect"></script>
 <script src="preview-clipboard.js?v=20261104-anytype-copy"></script>
 <script>
 const $=id=>document.getElementById(id);let imageData=null;

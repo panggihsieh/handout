@@ -5,11 +5,11 @@ import { readFileSync } from 'node:fs';
 const source = readFileSync(new URL('../zj454/public/api-settings.js', import.meta.url), 'utf8').replace(/^import .*;\r?$/gm, '');
 const elements = new Map(), listeners = new Map(), messages = [], storage = new Map();
 function element(id) {
-  if (!elements.has(id)) elements.set(id, { value: '', textContent: '', hidden: false, events: {}, addEventListener(type, fn) { this.events[type] = fn; } });
+  if (!elements.has(id)) elements.set(id, { value: '', textContent: '', hidden: false, events: {}, details: {}, closest() { return this.details; }, scrollIntoView() {}, focus() { this.focused = true; }, addEventListener(type, fn) { this.events[type] = fn; } });
   return elements.get(id);
 }
 element('apiProvider').value = 'openai';
-let apiCalls = 0, pendingConversion;
+let apiCalls = 0, pendingConversion, connectionFailure = false, pendingConnection;
 const fakeSettings = { provider: 'openai', apiKey: 'test-only-secret', model: 'fake-model' };
 const context = vm.createContext({
   URL, location: { origin: 'https://example.test', href: 'https://example.test/module/' }, navigator: { onLine: true },
@@ -20,7 +20,7 @@ const context = vm.createContext({
   usesLocalBackend: false,
   openSettings: async () => fakeSettings,
   verifyAndSeal: async (settings, password, verify) => { await verify(); return { ciphertext: 'encrypted-test' }; },
-  testConnection: async () => { apiCalls++; },
+  testConnection: async () => { apiCalls++; if (connectionFailure) throw Error('simulated offline API'); if (pendingConnection) await pendingConnection; },
   convertQuestion: async () => { apiCalls++; return pendingConversion ? pendingConversion : { blocks: [{ type: 'text', value: 'test' }] }; },
   generateVariant: async () => { apiCalls++; throw Error('simulated request failure'); },
   solveQuestion: async () => { apiCalls++; return { status: 'solved', answer: 'test' }; },
@@ -29,9 +29,27 @@ vm.runInContext(source, context);
 const state = () => messages.filter(item => item.message.type === 'handout-ai-connection').at(-1)?.message.state;
 const click = id => element(id).events.click();
 assert.equal(state(), 'locked'); assert.equal(apiCalls, 0);
+const send = async type => { for (const fn of listeners.get('message')) await fn({ source: context.parent, origin: 'https://example.test', data: { type } }); };
+await send('handout-ai-connect');
+assert.equal(apiCalls, 0);
+assert.equal(messages.at(-1).message.type, 'handout-ai-open-settings');
 storage.set('handout-api-vault-v1:openai', '{}');
+await send('handout-ai-focus-settings');
+assert.equal(element('vaultPassword').focused, true);
 await click('unlockApiSettings');
-assert.equal(state(), 'ready'); assert.equal(apiCalls, 0);
+assert.equal(state(), 'connected'); assert.equal(apiCalls, 1);
+assert.equal(storage.get('handout-api-last-provider'), 'openai');
+await send('handout-ai-connect'); assert.equal(apiCalls, 2);
+connectionFailure = true;
+await send('handout-ai-connect'); assert.equal(state(), 'error');
+assert.equal(context.window.getMathApiSettings().apiKey, fakeSettings.apiKey);
+connectionFailure = false;
+let finishConnect;
+pendingConnection = new Promise(resolve => { finishConnect = resolve; });
+const reconnect = send('handout-ai-connect'), beforeDuplicate = apiCalls;
+await send('handout-ai-connect'); assert.equal(apiCalls, beforeDuplicate);
+finishConnect(); await reconnect; pendingConnection = null;
+assert.equal(state(), 'connected');
 await context.window.convertMathQuestion();
 assert.equal(state(), 'connected');
 await assert.rejects(context.window.generateMathVariant(), /simulated/);

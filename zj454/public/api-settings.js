@@ -3,9 +3,12 @@ import { convertQuestion, testConnection, usesLocalBackend, solveQuestion, gener
 const $ = id => document.getElementById(id);
 const presets = { openai: 'gpt-4.1', gemini: 'gemini-2.5-flash', deepseek: 'deepseek-flash', qwen: 'qwen3-vl-plus' };
 const prefix = 'handout-api-vault-v1:';
+const lastProviderKey = 'handout-api-last-provider';
+function rememberProvider(provider) { try { localStorage.setItem(lastProviderKey, provider); } catch {} }
 let active = null;
 let revision = 0;
 let connectionRequest = 0, connectionState = 'locked';
+let reconnecting = null;
 const parentOrigins = new Set([location.origin, 'http://127.0.0.1:5173', 'http://localhost:5173', 'http://127.0.0.1:5184', 'http://localhost:5184']);
 let parentOrigin;
 try { parentOrigin = new URL(document.referrer || location.href).origin; } catch {}
@@ -25,9 +28,36 @@ async function withConnectionStatus(action) {
     throw error;
   }
 }
-window.addEventListener('message', event => {
-  if (event.source !== parent || parent === window || !parentOrigins.has(event.origin) || event.data?.type !== 'handout-ai-connection-query') return;
-  parentOrigin = event.origin; connectionChanged(connectionState);
+function openConnectionSettings() {
+  if (parent !== window && parentOrigins.has(parentOrigin)) parent.postMessage({ type: 'handout-ai-open-settings' }, parentOrigin);
+}
+function focusConnectionSettings() {
+  let saved = false;
+  try { saved = !!localStorage.getItem(recordName()); } catch {}
+  const field = $(saved ? 'vaultPassword' : 'apiKey');
+  field.closest('details').open = true;
+  field.scrollIntoView({ block: 'center' }); field.focus();
+}
+async function reconnectAi() {
+  if (reconnecting === revision) return;
+  if (!active) { connectionChanged('locked'); openConnectionSettings(); return; }
+  if (navigator.onLine === false) { connectionChanged('offline'); report('目前網路離線，恢復連線後可再按連線按鈕。'); return; }
+  const settings = { ...active }, current = revision;
+  reconnecting = current; report('正在測試連線（少量計費）…');
+  try {
+    await withConnectionStatus(() => testConnection(settings));
+    if (current === revision) report('連線成功，可使用 AI 轉換與解答。');
+  } catch (error) {
+    if (current === revision) { report('已解鎖，但連線失敗：' + (error.safeMessage || error.message)); openConnectionSettings(); }
+  } finally { if (reconnecting === current) reconnecting = null; }
+}
+window.addEventListener('message', async event => {
+  if (event.source !== parent || parent === window || !parentOrigins.has(event.origin)) return;
+  if (!['handout-ai-connection-query', 'handout-ai-connect', 'handout-ai-focus-settings'].includes(event.data?.type)) return;
+  parentOrigin = event.origin;
+  if (event.data.type === 'handout-ai-connection-query') connectionChanged(connectionState);
+  else if (event.data.type === 'handout-ai-focus-settings') focusConnectionSettings();
+  else await reconnectAi();
 });
 window.addEventListener('offline', () => connectionChanged('offline'));
 window.addEventListener('online', () => connectionChanged(active ? 'ready' : 'locked'));
@@ -53,6 +83,7 @@ function providerChanged() {
 $('apiProvider').addEventListener('change', providerChanged);
 $('unlockApiSettings').addEventListener('click', async () => {
   const button = $('unlockApiSettings'); button.disabled = true; const current = ++revision;
+  active = null; connectionChanged('locked');
   try {
     const provider = $('apiProvider').value;
     const raw = localStorage.getItem(recordName()); if (!raw) throw Error('此供應商沒有已儲存設定。');
@@ -60,9 +91,11 @@ $('unlockApiSettings').addEventListener('click', async () => {
     if (current !== revision) return;
     if (settings.provider !== provider || !settings.apiKey || !settings.model) throw Error('儲存內容不正確。');
     active = settings; $('apiModel').value = settings.model;
+    rememberProvider(provider);
     connectionChanged('ready');
     if (provider === 'qwen') $('apiBaseURL').value = settings.baseURL;
-    $('apiKey').value = ''; $('vaultPassword').value = ''; report('已解鎖，可使用 AI 轉換。');
+    $('apiKey').value = ''; $('vaultPassword').value = '';
+    await reconnectAi();
   } catch (error) { if(current===revision){active = null; connectionChanged('locked'); report(error.message);} } finally { $('vaultPassword').value = ''; button.disabled = false; }
 });
 $('lockApiSettings').addEventListener('click', () => { clearSecrets(); report('已鎖定並清除本分頁中的金鑰。'); });
@@ -83,12 +116,19 @@ $('testApiSettings').addEventListener('click', async () => {
     if (current !== revision) return;
     localStorage.setItem(name, JSON.stringify(record));
     active = settings; $('apiKey').value = ''; $('vaultPassword').value = '';
+    rememberProvider(settings.provider);
     connectionChanged('connected');
     $('apiKey').placeholder = '已加密；如需更換請重新貼上金鑰';
     report('連線測試成功，已加密儲存並啟用。金鑰不再顯示；如需更換請重新貼上並測試。');
   } catch (error) { if(current===undefined||current===revision){connectionChanged('error'); report(error.message + '（未覆蓋原有加密設定）');} }
   finally { button.disabled = false; }
 });
+try {
+  const previous = localStorage.getItem(lastProviderKey);
+  const saved = Object.keys(presets).filter(provider => localStorage.getItem(prefix + provider));
+  if (Object.hasOwn(presets, previous) && localStorage.getItem(prefix + previous)) $('apiProvider').value = previous;
+  else if (saved.length === 1) $('apiProvider').value = saved[0];
+} catch {}
 providerChanged();
 
 window.convertMathQuestion = (...args) => withConnectionStatus(() => convertQuestion(...args));

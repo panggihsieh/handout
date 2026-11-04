@@ -1101,7 +1101,7 @@ copyJsonPromptButton.addEventListener("click", () => {
   const frame = document.querySelector("#mathJsonFrame");
   if (!frame.getAttribute("src")) {
     const local = ["127.0.0.1", "localhost"].includes(location.hostname);
-    frame.src = local ? "http://127.0.0.1:5185/?v=20261104-ai-connection" : "../zj454/public/index.html?v=20261104-ai-connection";
+    frame.src = local ? "http://127.0.0.1:5185/?v=20261104-ai-reconnect" : "../zj454/public/index.html?v=20261104-ai-reconnect";
   }
   mathJsonDialog.showModal();
 });
@@ -1116,10 +1116,23 @@ function updateAiConnection(state) {
 }
 window.addEventListener('message', event => {
   const frame = document.querySelector('#mathJsonFrame');
-  if (!frame.getAttribute('src') || event.source !== frame.contentWindow || event.origin !== new URL(frame.src).origin || event.data?.type !== 'handout-ai-connection') return;
-  updateAiConnection(event.data.state);
+  if (!frame.getAttribute('src') || event.source !== frame.contentWindow || event.origin !== new URL(frame.src).origin) return;
+  if (event.data?.type === 'handout-ai-connection') updateAiConnection(event.data.state);
+  else if (event.data?.type === 'handout-ai-open-settings') {
+    if (!mathJsonDialog.open) mathJsonDialog.showModal();
+    frame.contentWindow.postMessage({ type: 'handout-ai-focus-settings' }, event.origin);
+  }
 });
-document.querySelector('#aiConnectionButton').addEventListener('click', () => copyJsonPromptButton.click());
+document.querySelector('#aiConnectionButton').addEventListener('click', async () => {
+  const button = document.querySelector('#aiConnectionButton');
+  button.disabled = true;
+  try {
+    const frame = await ensureAnswerModule();
+    frame.contentWindow.postMessage({ type: 'handout-ai-connect' }, new URL(frame.src).origin);
+  } catch {
+    updateAiConnection('error'); copyJsonPromptButton.click();
+  } finally { button.disabled = false; }
+});
 window.addEventListener('offline', () => updateAiConnection('offline'));
 window.addEventListener('online', () => {
   updateAiConnection('locked');
@@ -1159,7 +1172,7 @@ async function ensureAnswerModule(){
     frame.addEventListener('load',()=>{clearTimeout(timeout);frame.dataset.ready='true';resolve();},{once:true});
     if(!frame.getAttribute('src')){
       const local=['127.0.0.1','localhost'].includes(location.hostname);
-      frame.src=local?'http://127.0.0.1:5185/?v=20261104-ai-connection':'../zj454/public/index.html?v=20261104-ai-connection';
+      frame.src=local?'http://127.0.0.1:5185/?v=20261104-ai-reconnect':'../zj454/public/index.html?v=20261104-ai-reconnect';
     }
   });return frame;
 }
