@@ -94,7 +94,7 @@
               <button id="copyJsonPromptButton" type="button" aria-haspopup="dialog">JSON 轉換與預覽</button>
               <button id="aiAnswerButton" type="button" title="使用已解鎖的 API 解答左側題目，可能計費">AI 解答</button>
               <button id="aiConnectionButton" class="ai-connection-button" type="button" title="點擊連線／重新連線；連續模式只查模型資訊，單次對話測試可能少量計費"><img id="aiConnectionIcon" src="assets/no-connection.png" width="32" height="32" alt=""><span id="aiConnectionText" role="status">AI：尚未連線</span></button>
-              <button id="aiMonitorButton" class="ai-monitor-button" type="button" aria-pressed="false" title="每 60 秒查詢模型資訊，不呼叫模型生成；失敗時延長重試間隔，鎖定時停止">連續檢查：關（省 token）</button>
+              <button id="aiMonitorButton" class="ai-monitor-button" type="button" aria-pressed="false" title="目前未進行連續檢查。點擊開啟省 token 的連續檢查。">連續檢查：已關閉</button>
               <span id="aiAnswerStatus" role="status"></span>
               <span id="jsonPromptCopyStatus" role="status"></span>
             </span>
@@ -210,7 +210,7 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
-  <script src="app.js?v=20261104-ai-monitor"></script>
+  <script src="app.js?v=20261104-monitor-state-copy"></script>
 <footer class="project-license" aria-label="專案授權與著作權"><p>© 2026 panggihsieh 與本專案貢獻者 · 保留著作權</p><p>本專案原創內容採 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-hant" target="_blank" rel="noopener license">創用 CC BY-NC-SA 4.0</a>：姓名標示・非商業性・相同方式分享。</p><p><a href="https://github.com/panggihsieh/handout/blob/main/COPYRIGHT.md" target="_blank" rel="noopener">授權範圍與第三方權利</a> · 上傳考卷與第三方素材依原權利人授權。</p></footer>
 </body>
 </html>

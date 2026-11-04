@@ -1121,7 +1121,12 @@ window.addEventListener('message', event => {
   else if (event.data?.type === 'handout-ai-monitor' && typeof event.data.enabled === 'boolean') {
     const button = document.querySelector('#aiMonitorButton');
     button.setAttribute('aria-pressed', String(event.data.enabled));
-    button.textContent = !event.data.enabled ? '連續檢查：關（省 token）' : event.data.waitingForUnlock ? '停止連續檢查（待解鎖）' : '停止連續檢查（省 token）';
+    button.textContent = !event.data.enabled ? '連續檢查：已關閉' : event.data.waitingForUnlock ? '連續檢查：待解鎖' : '連續檢查：已開啟（省 token）';
+    button.title = !event.data.enabled
+      ? '目前未進行連續檢查。點擊開啟省 token 的連續檢查。'
+      : event.data.waitingForUnlock
+        ? '已啟用連續檢查，但尚未解鎖 API key，目前未執行檢查。解鎖後開始；點擊可關閉。'
+        : '目前已啟用連續檢查：約每 60 秒查詢模型資訊，不呼叫模型生成；失敗時延長重試間隔，離線時暫停，鎖定時停止。點擊可關閉。';
   }
   else if (event.data?.type === 'handout-ai-open-settings') {
     if (!mathJsonDialog.open) mathJsonDialog.showModal();
