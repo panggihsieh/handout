@@ -5,11 +5,11 @@
 <p>請在下方模組自行解鎖。測試不讀取、顯示或匯出金鑰。整批最多 81 次模型請求（21 次圖片轉換、20 次解答、20 次類題各含生成及檢核），可能計費；依序執行，不自動重試。停止後不再送出新請求，當前請求可能仍計費。</p>
 <button id="run">開始整批測試（可能計費）</button><button id="stop" disabled>停止後續請求</button><button id="export">下載測試紀錄</button>
 <p id="status" role="status">等待解鎖後開始；尚未呼叫 API。</p>
-<iframe id="module" src="../zj454/public/index.html?v=20261104-grid-check" title="解鎖 API 與題目轉換模組"></iframe>
+<iframe id="module" src="../zj454/public/index.html?v=20261104-lock-state" title="解鎖 API 與題目轉換模組"></iframe>
 <div id="results"></div><pre id="report" hidden></pre>
 <script type="module">
 import {geometryCases,userGridCase} from './geometry-cases.js';
-import {renderGridDiagram} from '../zj454/public/grid-diagram.js?v=20261104-grid-check';
+import {renderGridDiagram} from '../zj454/public/grid-diagram.js?v=20261104-lock-state';
 const frame=document.querySelector('#module'),status=document.querySelector('#status'),results=document.querySelector('#results');
 const records=[];let stopped=false,running=false;
 function record(data){

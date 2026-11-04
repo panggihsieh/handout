@@ -6,6 +6,7 @@ const prefix = 'handout-api-vault-v1:';
 const lastProviderKey = 'handout-api-last-provider';
 function rememberProvider(provider) { try { localStorage.setItem(lastProviderKey, provider); } catch {} }
 let active = null;
+let settingsBusy = false;
 let revision = 0;
 let connectionRequest = 0, connectionState = 'locked';
 let reconnecting = null;
@@ -14,8 +15,22 @@ let monitorEnabled = false, monitorTimer = null, monitorEpoch = 0, monitorRunnin
 const parentOrigins = new Set([location.origin, 'http://127.0.0.1:5173', 'http://localhost:5173', 'http://127.0.0.1:5184', 'http://localhost:5184']);
 let parentOrigin;
 try { parentOrigin = new URL(document.referrer || location.href).origin; } catch {}
+function renderAccessState() {
+  let saved = false;
+  try { saved = !!localStorage.getItem(prefix + $('apiProvider').value); } catch {}
+  const access = $('apiAccessState');
+  access.textContent = active ? '金鑰：已解鎖（Unlocked）' : saved ? '金鑰：已鎖定（Locked）' : '金鑰：尚未設定（Locked）';
+  access.dataset.state = active ? 'unlocked' : 'locked';
+  access.title = active ? '本分頁可使用金鑰；連線失敗不代表已鎖定。按「鎖定」清除記憶體中的金鑰。' : saved ? '加密設定仍在；請輸入密碼解鎖。本分頁目前不能使用金鑰。' : '請先輸入新金鑰及密碼，測試成功後加密儲存。';
+  $('lockApiSettings').disabled = !active;
+  $('unlockApiSettings').disabled = settingsBusy || !!active;
+  $('testApiSettings').disabled = settingsBusy || !$('apiKey').value.trim();
+  const labels = { locked:'連線：尚未驗證', ready:'連線：待驗證', checking:'連線：檢查中…', connected:'連線：最近請求成功', verified:'連線：模型資訊驗證成功', error:'連線：請求失敗', offline:'連線：網路離線' };
+  $('apiConnectionState').textContent = labels[connectionState];
+}
 function connectionChanged(state) {
   connectionState = navigator.onLine === false ? 'offline' : state;
+  renderAccessState();
   if (parent !== window && parentOrigins.has(parentOrigin)) parent.postMessage({ type: 'handout-ai-connection', state: connectionState }, parentOrigin);
 }
 async function withConnectionStatus(action, successState = 'connected') {
@@ -119,8 +134,8 @@ function providerChanged() {
 }
 $('apiProvider').addEventListener('change', providerChanged);
 $('unlockApiSettings').addEventListener('click', async () => {
-  const button = $('unlockApiSettings'); button.disabled = true; const current = ++revision;
-  active = null; connectionChanged('locked');
+  const button = $('unlockApiSettings'); settingsBusy = true; button.disabled = true; const current = ++revision;
+  active = null; connectionChanged('locked'); button.disabled = true;
   try {
     const provider = $('apiProvider').value;
     const raw = localStorage.getItem(recordName()); if (!raw) throw Error('此供應商沒有已儲存設定。');
@@ -133,14 +148,14 @@ $('unlockApiSettings').addEventListener('click', async () => {
     if (provider === 'qwen') $('apiBaseURL').value = settings.baseURL;
     $('apiKey').value = ''; $('vaultPassword').value = '';
     if (monitorEnabled) { publishMonitor(); await runMonitor(); } else await reconnectAi();
-  } catch (error) { if(current===revision){active = null; connectionChanged('locked'); report(error.message);} } finally { $('vaultPassword').value = ''; button.disabled = false; }
+  } catch (error) { if(current===revision){active = null; connectionChanged('locked'); report(error.message);} } finally { $('vaultPassword').value = ''; settingsBusy = false; renderAccessState(); }
 });
 $('lockApiSettings').addEventListener('click', () => { clearSecrets(); report('已鎖定並清除本分頁中的金鑰。'); });
 $('deleteApiSettings').addEventListener('click', () => {
   try { localStorage.removeItem(recordName()); clearSecrets(); report('此供應商的加密設定已刪除。'); } catch (error) { report(error.message); }
 });
 $('testApiSettings').addEventListener('click', async () => {
-  const button = $('testApiSettings'); button.disabled = true; let current;
+  const button = $('testApiSettings'); settingsBusy = true; button.disabled = true; let current;
   try {
     if (!$('apiKey').value.trim()) throw Error('請重新貼上金鑰；已儲存的金鑰不會再次顯示。');
     const settings = settingsFromForm(), password = $('vaultPassword').value, name = recordName(); current = ++revision;
@@ -159,8 +174,9 @@ $('testApiSettings').addEventListener('click', async () => {
     report('連線測試成功，已加密儲存並啟用。金鑰不再顯示；如需更換請重新貼上並測試。');
     if (monitorEnabled) { publishMonitor(); scheduleMonitor(); }
   } catch (error) { if(current===undefined||current===revision){connectionChanged('error'); report(error.message + '（未覆蓋原有加密設定）');} }
-  finally { button.disabled = false; }
+  finally { settingsBusy = false; renderAccessState(); }
 });
+$('apiKey').addEventListener('input', renderAccessState);
 try {
   const previous = localStorage.getItem(lastProviderKey);
   const saved = Object.keys(presets).filter(provider => localStorage.getItem(prefix + provider));
