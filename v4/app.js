@@ -1101,7 +1101,7 @@ copyJsonPromptButton.addEventListener("click", () => {
   const frame = document.querySelector("#mathJsonFrame");
   if (!frame.getAttribute("src")) {
     const local = ["127.0.0.1", "localhost"].includes(location.hostname);
-    frame.src = local ? "http://127.0.0.1:5185/?v=20261104-source-layout" : "../zj454/public/index.html?v=20261104-source-layout";
+    frame.src = local ? "http://127.0.0.1:5185/?v=20261104-anytype-copy" : "../zj454/public/index.html?v=20261104-anytype-copy";
   }
   mathJsonDialog.showModal();
 });
@@ -1135,7 +1135,7 @@ async function ensureAnswerModule(){
     frame.addEventListener('load',()=>{clearTimeout(timeout);frame.dataset.ready='true';resolve();},{once:true});
     if(!frame.getAttribute('src')){
       const local=['127.0.0.1','localhost'].includes(location.hostname);
-      frame.src=local?'http://127.0.0.1:5185/?v=20261104-source-layout':'../zj454/public/index.html?v=20261104-source-layout';
+      frame.src=local?'http://127.0.0.1:5185/?v=20261104-anytype-copy':'../zj454/public/index.html?v=20261104-anytype-copy';
     }
   });return frame;
 }
