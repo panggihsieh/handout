@@ -1,0 +1,21 @@
+<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><title>四張色紙疊圖回歸檢查</title>
+<style>body{font:16px system-ui;margin:16px}iframe{width:100%;height:950px;border:1px solid #ccd}</style>
+<h1>四張色紙：固定格線與疊圖回歸檢查</h1><p id="status">本頁以人工核對的列數、欄數及塗色位置建圖，測試疊圖操作。沒有呼叫 AI，不是 AI 辨識通過的證據。</p>
+<iframe id="app" src="../zj454/public/index.html?v=20261104-grid-check" title="疊圖測試模組"></iframe>
+<script type="module">
+import {userGridCase} from './geometry-cases.js';
+import {renderGridDiagram} from '../zj454/public/grid-diagram.js?v=20261104-grid-check';
+const frame=document.querySelector('#app');
+frame.addEventListener('load',async()=>{
+ try{
+  const doc=frame.contentDocument,image=doc.querySelector('#imagePreview');
+  // Resolve relative to the child module, so use an absolute same-origin URL.
+  image.src=new URL('fixtures/user-color-paper.png',location.href).href;
+  await image.decode();image.hidden=false;
+  doc.querySelector('#json').value=JSON.stringify({blocks:[{type:'text',value:userGridCase.text},{type:'svg',value:renderGridDiagram(JSON.stringify(userGridCase.grid))}]});
+  doc.querySelector('#render').click();doc.querySelector('#compareOverlay').click();
+  if(!doc.querySelector('#overlayDialog').open)throw Error('疊圖視窗未開啟');
+  document.querySelector('#status').textContent='疊圖已開啟：可縮放、拖曳、調整透明度或切換差異顯色；原圖和 JSON 均不會被修改。人工建圖，未呼叫 AI。';
+ }catch(error){document.querySelector('#status').textContent='失敗：'+error.message;}
+});
+</script></html>

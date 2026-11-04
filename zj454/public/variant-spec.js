@@ -25,6 +25,14 @@ export function validateVariant(original, candidate) {
   validateBlocks(candidate);
   if(!visibleNumbers(original)||visibleNumbers(original)===visibleNumbers(candidate))throw Error('類似題未合理更換數字，請重試。');
   if(JSON.stringify(outlines(original))!==JSON.stringify(outlines(candidate)))throw Error('類似題改變了原圖輪廓或排版，請重試。');
+  const numbers = text => new Set(text.match(/\d+(?:\.\d+)?/g) || []);
+  const body = question => question.blocks.filter(b=>b.type!=='svg').map(b=>b.value).join(' ');
+  const labels = question => question.blocks.filter(b=>b.type==='svg').map(b=>b.value.replace(/<[^>]*>/g,' ')).join(' ');
+  const before=numbers(body(original)), after=numbers(body(candidate)), drawing=numbers(labels(candidate));
+  // Reject obvious stale dimension labels; ambiguous correspondences still need AI/human review.
+  for(const old of numbers(labels(original))) {
+    if(before.has(old)&&!after.has(old)&&drawing.has(old))throw Error('題文數字已變更，但附圖仍保留舊標示，未套用類似題。');
+  }
   return candidate;
 }
 

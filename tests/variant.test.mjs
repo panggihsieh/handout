@@ -24,6 +24,7 @@ assert.deepEqual(validateVariant(original,onlyNumbers),onlyNumbers);
 let simpleCalls=0;
 assert.deepEqual(await createVariant({},original,async()=>JSON.stringify(++simpleCalls===1?onlyNumbers:{status:'verified',reason:'僅簡單換數，解法與難度不變。'})),onlyNumbers);
 assert.equal(simpleCalls,2);
+assert.throws(()=>validateVariant(original,{blocks:[onlyNumbers.blocks[0],original.blocks[1]]}),/舊標示/);
 assert.throws(()=>validateVariant(original,{blocks:[candidate.blocks[0],{type:'svg',value:candidate.blocks[1].value.replace('width="240"','width="120"')}]}),/輪廓/);
 let count=0;
 await assert.rejects(createVariant({},original,async()=>JSON.stringify(++count===1?candidate:{status:'needs_review',reason:'條件有矛盾。'})),/檢核未通過/);

@@ -1101,7 +1101,7 @@ copyJsonPromptButton.addEventListener("click", () => {
   const frame = document.querySelector("#mathJsonFrame");
   if (!frame.getAttribute("src")) {
     const local = ["127.0.0.1", "localhost"].includes(location.hostname);
-    frame.src = local ? "http://127.0.0.1:5185/?v=20261104-simple-variant" : "../zj454/public/index.html?v=20261104-simple-variant";
+    frame.src = local ? "http://127.0.0.1:5185/?v=20261104-grid-check" : "../zj454/public/index.html?v=20261104-grid-check";
   }
   mathJsonDialog.showModal();
 });
@@ -1188,7 +1188,7 @@ async function ensureAnswerModule(){
     frame.addEventListener('load',()=>{clearTimeout(timeout);frame.dataset.ready='true';resolve();},{once:true});
     if(!frame.getAttribute('src')){
       const local=['127.0.0.1','localhost'].includes(location.hostname);
-      frame.src=local?'http://127.0.0.1:5185/?v=20261104-simple-variant':'../zj454/public/index.html?v=20261104-simple-variant';
+      frame.src=local?'http://127.0.0.1:5185/?v=20261104-grid-check':'../zj454/public/index.html?v=20261104-grid-check';
     }
   });return frame;
 }

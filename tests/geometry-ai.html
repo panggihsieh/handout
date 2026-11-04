@@ -1,0 +1,64 @@
+<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><title>幾何題目實際 AI 測試</title>
+<style>body{font:16px system-ui;margin:24px;color:#172b4d}button{padding:10px;margin:6px}iframe{width:100%;height:530px;border:1px solid #ccc}pre{white-space:pre-wrap;overflow-wrap:anywhere}details{margin:12px 0;padding:10px;border:1px solid #ccd}#status{position:sticky;top:0;background:#fff;padding:12px;border:1px solid #ccc}</style>
+<h1>20 題幾何與簡單類題測試</h1>
+<p>來源：OpenStax Prealgebra 2e 與 Illustrative Mathematics；含子題的中文改編及自行重建的示意圖。另加入使用者的四張色紙回歸題。來源連結、標準答案及實際回覆會保留供人工核對。</p>
+<p>請在下方模組自行解鎖。測試不讀取、顯示或匯出金鑰。整批最多 81 次模型請求（21 次圖片轉換、20 次解答、20 次類題各含生成及檢核），可能計費；依序執行，不自動重試。停止後不再送出新請求，當前請求可能仍計費。</p>
+<button id="run">開始整批測試（可能計費）</button><button id="stop" disabled>停止後續請求</button><button id="export">下載測試紀錄</button>
+<p id="status" role="status">等待解鎖後開始；尚未呼叫 API。</p>
+<iframe id="module" src="../zj454/public/index.html?v=20261104-grid-check" title="解鎖 API 與題目轉換模組"></iframe>
+<div id="results"></div><pre id="report" hidden></pre>
+<script type="module">
+import {geometryCases,userGridCase} from './geometry-cases.js';
+import {renderGridDiagram} from '../zj454/public/grid-diagram.js?v=20261104-grid-check';
+const frame=document.querySelector('#module'),status=document.querySelector('#status'),results=document.querySelector('#results');
+const records=[];let stopped=false,running=false;
+function record(data){
+ records.push(data);document.querySelector('#report').textContent=JSON.stringify({runAt:new Date().toISOString(),mock:false,records},null,2);
+ const item=document.createElement('details'),heading=document.createElement('summary'),body=document.createElement('pre');
+ heading.textContent=`${data.id} ${data.stage}：${data.error?'失敗':'已收到回覆，待核對'}`;
+ body.textContent=JSON.stringify(data,null,2);item.append(heading,body);results.append(item);
+}
+async function raster(item){
+ const diagram=item.grid?renderGridDiagram(JSON.stringify(item.grid)):item.diagram;
+ const canvas=document.createElement('canvas');canvas.width=900;canvas.height=800;
+ const ctx=canvas.getContext('2d');ctx.fillStyle='white';ctx.fillRect(0,0,900,800);ctx.fillStyle='black';ctx.font='23px sans-serif';
+ let line='',y=35;for(const char of item.text){if(ctx.measureText(line+char).width>850){ctx.fillText(line,20,y);y+=34;line='';}line+=char;}ctx.fillText(line,20,y);
+ if(diagram){const image=new Image();image.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(diagram);await image.decode();const scale=Math.min(850/image.naturalWidth,600/image.naturalHeight);ctx.drawImage(image,20,y+30,image.naturalWidth*scale,image.naturalHeight*scale);}
+ return canvas.toDataURL('image/png');
+}
+async function sourceQuestion(item){return {blocks:[{type:'text',value:item.text},...((item.grid||item.diagram)?[{type:'svg',value:item.grid?renderGridDiagram(JSON.stringify(item.grid)):item.diagram}]:[])]};}
+function solve(question){return new Promise((resolve,reject)=>{
+ const id=crypto.randomUUID(),origin=new URL(frame.src).origin;
+ const timer=setTimeout(()=>{window.removeEventListener('message',receive);reject(Error('解答逾時；不自動重試。'));},200000);
+ function receive(event){if(event.source!==frame.contentWindow||event.origin!==origin||event.data?.type!=='handout-solved'||event.data.id!==id)return;clearTimeout(timer);window.removeEventListener('message',receive);event.data.error?reject(Error(event.data.error)):resolve(event.data.result);}
+ window.addEventListener('message',receive);frame.contentWindow.postMessage({type:'handout-solve',id,question},origin);
+});}
+document.querySelector('#stop').onclick=()=>{stopped=true;status.textContent='已要求停止；等待當前請求結束。';};
+document.querySelector('#run').onclick=async()=>{
+ if(running)return;
+ // Settings remain inside the application call; never add them to records.
+ try{frame.contentWindow.getMathApiSettings();}catch{status.textContent='請先在下方解鎖 API 設定。';return;}
+ running=true;stopped=false;document.querySelector('#run').disabled=true;document.querySelector('#stop').disabled=false;
+ let done=0;
+ try{
+  for(const item of [...geometryCases,userGridCase]){
+   if(stopped)break;
+   const image=item.id==='U01'?await fetch('fixtures/user-color-paper.png').then(r=>{if(!r.ok)throw Error('找不到使用者原始截圖');return r.blob();}).then(blob=>new Promise(resolve=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.readAsDataURL(blob);})):await raster(item);
+   const metadata={id:item.id,source:item.source||'使用者提供原始截圖',part:item.part,text:item.text,expected:item.expected};
+   for(const stage of item.id==='U01'?['convert']:['convert','solve','variant']){
+    if(stopped)break;status.textContent=`${item.id}：${stage}（已完成 ${done} 個階段）`;
+    try{
+     let output;
+     if(stage==='convert')output=await frame.contentWindow.convertMathQuestion(frame.contentWindow.getMathApiSettings(),{text:'請忠實轉換圖片中的題目，保留附圖。',image});
+     else if(stage==='solve')output=await solve({text:item.text,image});
+     else output=await frame.contentWindow.generateMathVariant(frame.contentWindow.getMathApiSettings(),await sourceQuestion(item));
+     record({...metadata,stage,output});
+    }catch(error){record({...metadata,stage,error:error.safeMessage||error.message});if(/解鎖|金鑰|額度|HTTP (401|403|429)|網路|逾時/.test(error.message)){stopped=true;}}
+    done++;
+   }
+  }
+ }catch(error){record({id:'runner',stage:'setup',error:error.message});}
+ finally{running=false;document.querySelector('#run').disabled=false;document.querySelector('#stop').disabled=true;status.textContent=`${stopped?'已停止':'測試結束'}，共 ${done} 個階段。實際回覆待人工核對，不能把格式通過視為數學正確。`;}
+};
+document.querySelector('#export').onclick=()=>{const blob=new Blob([document.querySelector('#report').textContent],{type:'application/json'});const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download='geometry-ai-results.json';link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000);};
+</script></html>

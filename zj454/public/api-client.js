@@ -1,7 +1,8 @@
+import { normalizeConvertedQuestion } from './grid-diagram.js?v=20261104-grid-check';
 import { solutionInstructions, solutionSchema, validateSolution, parseSolution } from './solution-spec.js?v=20261104-geometry-dimensions';
 import { normalizeSettings, callProvider } from './providers.js';
-import { instructions, responseSchema } from './question-spec.js?v=20261104-geometry-dimensions';
-import { createVariant } from './variant-spec.js?v=20261104-simple-variant';
+import { instructions, conversionSchema, validateBlocks } from './question-spec.js?v=20261104-grid-check';
+import { createVariant } from './variant-spec.js?v=20261104-grid-check';
 import { probeProviderConnection } from './connection-probe.js?v=20261104-monitor';
 export const usesLocalBackend = ['127.0.0.1', 'localhost'].includes(location.hostname) && location.port === '5185';
 async function backend(path, body) {
@@ -27,8 +28,10 @@ export async function probeConnection(settings) {
 export async function convertQuestion(settings, { text, image }) {
   if (usesLocalBackend) return backend('/api/convert', { settings, text, image });
   if (!text?.trim() && !image) throw Error('請輸入題目文字或上傳圖片。');
-  const output = await direct(settings, { text, image, instructions, schema: responseSchema });
-  try { return JSON.parse(output); } catch { throw Error('模型沒有傳回有效 JSON，請重試。'); }
+  const output = await direct(settings, { text, image, instructions, schema: conversionSchema });
+  let data;
+  try { data = JSON.parse(output); } catch { throw Error('模型沒有傳回有效 JSON，請重試。'); }
+  return validateBlocks(normalizeConvertedQuestion(data));
 }
 
 export async function solveQuestion(settings,{text,image}) {

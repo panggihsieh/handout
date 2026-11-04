@@ -1,3 +1,4 @@
+import { normalizeConvertedQuestion } from './public/grid-diagram.js';
 import "dotenv/config";
 import express from "express";
 import { fileURLToPath } from "node:url";
@@ -23,7 +24,7 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: "12mb" }));
 app.use(express.static(fileURLToPath(new URL("./public", import.meta.url))));
 
-import { instructions, responseSchema, validateBlocks } from "./public/question-spec.js";
+import { instructions, conversionSchema, validateBlocks } from "./public/question-spec.js";
 
 app.post("/api/convert", async (req, res) => {
   try {
@@ -32,8 +33,8 @@ app.post("/api/convert", async (req, res) => {
     if ((typeof text !== "string" || !text.trim()) && !image) return res.status(400).json({ error: "請輸入題目文字或上傳圖片。" });
     if (text && (typeof text !== "string" || text.length > 50000)) return res.status(400).json({ error: "題目文字過長或格式錯誤。" });
     if (image && (typeof image !== "string" || !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/i.test(image) || image.length > 10 * 1024 * 1024)) return res.status(400).json({ error: "圖片必須是 7 MB 以下 PNG、JPEG 或 WebP。" });
-    const output = await callProvider(config, { text, image, instructions, schema: responseSchema });
-    res.json(validateBlocks(JSON.parse(output)));
+    const output = await callProvider(config, { text, image, instructions, schema: conversionSchema });
+    res.json(validateBlocks(normalizeConvertedQuestion(JSON.parse(output))));
   } catch (error) {
     // 不記錄或回傳供應商原始錯誤，避免金鑰或題目被寫入日誌。
     res.status(error.status || 422).json({ error: error.safeMessage || (error instanceof SyntaxError ? "模型未傳回有效 JSON，請重試。" : "轉換失敗：請確認 API 設定、額度與輸出格式。") });
