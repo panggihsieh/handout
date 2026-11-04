@@ -19,11 +19,15 @@ assert.equal((16*10)/(8*5),4); // A length multiplier of 2 scales area by 4.
 
 assert.throws(()=>validateVariant(original,original),/更換數字/);
 const onlyNumbers={blocks:[{type:'text',value:original.blocks[0].value.replace('8','16').replace('5','10')},candidate.blocks[1]]};
-assert.throws(()=>validateVariant(original,onlyNumbers),/只替換數字/);
+assert.deepEqual(validateVariant(original,onlyNumbers),onlyNumbers);
+// A numeric-only change must reach review and may be accepted without a rewrite.
+let simpleCalls=0;
+assert.deepEqual(await createVariant({},original,async()=>JSON.stringify(++simpleCalls===1?onlyNumbers:{status:'verified',reason:'僅簡單換數，解法與難度不變。'})),onlyNumbers);
+assert.equal(simpleCalls,2);
 assert.throws(()=>validateVariant(original,{blocks:[candidate.blocks[0],{type:'svg',value:candidate.blocks[1].value.replace('width="240"','width="120"')}]}),/輪廓/);
 let count=0;
 await assert.rejects(createVariant({},original,async()=>JSON.stringify(++count===1?candidate:{status:'needs_review',reason:'條件有矛盾。'})),/檢核未通過/);
 await assert.rejects(createVariant({},original,async()=>'{broken'),/JSON/);
 await assert.rejects(createVariant({},original,async()=>JSON.stringify({blocks:[]})),/完整辨識/);
 await assert.rejects(createVariant({},original,async()=>JSON.stringify({blocks:[candidate.blocks[0],{type:'svg',value:svg.replace('</svg>','<script>alert(1)</script></svg>')}]})),/安全/);
-console.log('Variant generation/review, numeric and wording changes, fixed distorted SVG, original preservation and rejection paths: passed (mock only)');
+console.log('Variant generation/review, simple numeric-only changes, fixed SVG, original preservation and rejection paths: passed (mock only)');
