@@ -26,7 +26,7 @@ async function buildPreviewClipboard(preview) {
   for (const math of clone.querySelectorAll('.katex')) {
     const source = math.querySelector('annotation[encoding="application/x-tex"]');
     if (!source) throw Error('無法取得公式原文，請重新渲染。');
-    math.replaceWith(document.createTextNode('$' + source.textContent.trim() + '$'));
+    math.replaceWith(document.createTextNode('$' + source.textContent.trim().replace(/\r?\n/g, ' ') + '$'));
   }
   const html = [], text = [];
   let paragraph = '';
