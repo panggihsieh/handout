@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Latex數學-圖文練習簿 v4</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
-  <link rel="stylesheet" href="styles.css?v=20261104-answer-colors">
+  <link rel="stylesheet" href="styles.css?v=20261104-source-layout">
 <style id="project-license-style">.project-license{margin:24px auto;padding:16px 20px;max-width:1100px;text-align:center;font:14px/1.8 system-ui,sans-serif;color:#475569;overflow-wrap:anywhere}.project-license a{color:#1d4f81;text-decoration:underline}.project-license p{margin:4px 0}@media print{.project-license{display:none}}</style>
 </head>
 <body>
@@ -109,7 +109,7 @@
 7. 不使用 question、answer、solution 等自訂欄位；不要將答案或解法放入題目。
 8. 保留原題的數字、單位、條件與所求；附圖以題文、標示數字與明確幾何記號為依據，不依外觀比例推定關係。
 9. 若要求生成類題，先依要求合理換數字並驗算，再使用自然且不同的句型改寫；文字調整時不得再改變已驗算的數字、條件與結果。
-10. 輸出前檢查 JSON 語法與數學內容。
+10. 盡量保留原圖排版：同一行文字與公式連續排列；僅於原圖換行、分段或選項分行處，在相鄰 text 的 value 加入 JSON 的 \n，並保留縮排及公式前後必要空格。行內分數保留上下堆疊，可用 \\dfrac；多行算式用 aligned 環境對齊。附圖保留長寬比例與標示的相對位置。輸出前檢查 JSON 語法與數學內容。
 11. 只輸出 JSON 原文，不加 Markdown 程式碼框或任何說明，讓我可以直接複製貼上。
 
 格式範例：
@@ -206,7 +206,7 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
-  <script src="app.js?v=20261104-variant"></script>
+  <script src="app.js?v=20261104-source-layout"></script>
 <footer class="project-license" aria-label="專案授權與著作權"><p>© 2026 panggihsieh 與本專案貢獻者 · 保留著作權</p><p>本專案原創內容採 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-hant" target="_blank" rel="noopener license">創用 CC BY-NC-SA 4.0</a>：姓名標示・非商業性・相同方式分享。</p><p><a href="https://github.com/panggihsieh/handout/blob/main/COPYRIGHT.md" target="_blank" rel="noopener">授權範圍與第三方權利</a> · 上傳考卷與第三方素材依原權利人授權。</p></footer>
 </body>
 </html>

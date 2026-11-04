@@ -772,24 +772,22 @@ h1 {
 }
 
 .problem-json {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  display: block;
   width: 100%;
   height: 100%;
   overflow: hidden;
-  line-height: 1.28;
+  line-height: 1.6;
 }
 
 .problem-json-text,
 .problem-json-latex {
-  flex: 0 0 auto;
+  white-space: pre-wrap;
   min-width: 0;
   overflow-wrap: anywhere;
 }
 
 .problem-json-latex {
-  overflow-x: auto;
+  display: inline;
 }
 
 .problem-json-latex .katex-display {
@@ -798,10 +796,11 @@ h1 {
 
 .problem-json-svg {
   display: block;
-  flex: 1 1 auto;
-  min-height: 0;
-  width: 100%;
-  height: 100%;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: 100%;
+  margin: 10px auto;
   object-fit: contain;
 }
 

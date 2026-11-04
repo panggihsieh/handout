@@ -380,7 +380,7 @@ function parseQuestionJson(source) {
     if (!["text", "latex", "svg"].includes(type) || typeof entry?.value !== "string" || !entry.value.trim()) {
       throw new Error("每個區塊須有 text、latex 或 svg 類型及非空文字 value");
     }
-    return { type, value: type === "svg" ? sanitizeSvg(entry.value) : entry.value.trim() };
+    return { type, value: type === "svg" ? sanitizeSvg(entry.value) : entry.value };
   });
 }
 
@@ -398,16 +398,16 @@ function renderQuestionJson(container, source, fontScale) {
       image.style.transform = `scale(${(fontScale / 120).toFixed(3)})`;
       wrapper.appendChild(image);
     } else if (block.type === "latex") {
-      const latex = document.createElement("div");
+      const latex = document.createElement("span");
       latex.className = "problem-json-latex";
       if (window.katex?.render) {
-        window.katex.render(block.value, latex, { displayMode: true, throwOnError: false, trust: false });
+        window.katex.render(block.value, latex, { displayMode: false, throwOnError: false, trust: false });
       } else {
         latex.textContent = block.value;
       }
       wrapper.appendChild(latex);
     } else {
-      const textBlock = document.createElement("div");
+      const textBlock = document.createElement("span");
       textBlock.className = "problem-json-text";
       textBlock.textContent = normalizeMathDelimiters(block.value);
       renderInlineMath(textBlock);
@@ -1101,7 +1101,7 @@ copyJsonPromptButton.addEventListener("click", () => {
   const frame = document.querySelector("#mathJsonFrame");
   if (!frame.getAttribute("src")) {
     const local = ["127.0.0.1", "localhost"].includes(location.hostname);
-    frame.src = local ? "http://127.0.0.1:5185/?v=20261104-variant" : "../zj454/public/index.html?v=20261104-variant";
+    frame.src = local ? "http://127.0.0.1:5185/?v=20261104-source-layout" : "../zj454/public/index.html?v=20261104-source-layout";
   }
   mathJsonDialog.showModal();
 });
@@ -1135,7 +1135,7 @@ async function ensureAnswerModule(){
     frame.addEventListener('load',()=>{clearTimeout(timeout);frame.dataset.ready='true';resolve();},{once:true});
     if(!frame.getAttribute('src')){
       const local=['127.0.0.1','localhost'].includes(location.hostname);
-      frame.src=local?'http://127.0.0.1:5185/?v=20261104-variant':'../zj454/public/index.html?v=20261104-variant';
+      frame.src=local?'http://127.0.0.1:5185/?v=20261104-source-layout':'../zj454/public/index.html?v=20261104-source-layout';
     }
   });return frame;
 }

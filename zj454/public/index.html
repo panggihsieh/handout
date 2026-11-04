@@ -15,12 +15,12 @@
 textarea{width:100%;min-height:330px;padding:12px;border:1px solid #cbd5e1;border-radius:8px;resize:vertical;font:14px/1.6 Consolas,monospace}
 button{background:#2563a1;color:white;border:0;border-radius:8px;padding:10px 14px;margin:8px 6px 0 0;cursor:pointer}button:disabled{opacity:.5}
 .conversion-actions{display:flex;align-items:center;flex-wrap:wrap;gap:14px;margin-top:16px}.conversion-actions button{margin:0}.conversion-progress{display:flex;align-items:center;gap:10px;font-size:14px;color:#475569}.conversion-progress[hidden]{display:none}.progress-ring{--progress:0;position:relative;display:grid;place-items:center;flex-shrink:0;width:58px;height:58px;border-radius:50%;background:conic-gradient(#2563a1 calc(var(--progress)*1%),#e2e8f0 0);font-size:13px;font-weight:700;color:#1d4f81}.progress-ring::before{content:"";position:absolute;inset:5px;border-radius:50%;background:white}.progress-ring span{position:relative}.conversion-progress[data-state="error"]{color:#b91c1c}.conversion-progress[data-state="success"]{color:#166534}
-#preview,#variantPreview{min-height:330px;border:1px solid #e2e8f0;border-radius:8px;padding:16px;font-size:19px;line-height:1.8}
+#preview,#variantPreview{min-height:330px;border:1px solid #e2e8f0;border-radius:8px;padding:16px;font-size:19px;line-height:1.6}
 .variant-dialog{width:min(1200px,calc(100vw - 32px))}.variant-layout{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.variant-layout>section{min-width:0}.variant-layout textarea{min-height:330px}.variant-note{font-size:14px;line-height:1.6;color:#64748b}@media(max-width:760px){.variant-layout{grid-template-columns:1fr}}
-.question-block{margin:10px 0;white-space:pre-wrap}.math-block{overflow-x:auto}.svg-block svg{display:block;max-width:100%;width:auto;height:auto;max-height:300px;margin:auto}
+.question-block{margin:0;white-space:pre-wrap}.math-block{display:inline}.svg-block{display:block;margin:10px 0}.svg-block svg{display:block;max-width:100%;width:auto;height:auto;max-height:300px;margin:auto}
 #imagePreview{width:100%;height:auto;max-width:100%;max-height:520px;object-fit:contain;margin-top:12px}#status{white-space:pre-wrap;margin:16px 0;color:#1d4f81}
 @media(max-width:960px){.workspace{grid-template-columns:1fr}}
-dialog{width:min(900px,calc(100vw - 32px));max-height:85vh;overflow:auto;border:1px solid #cbd5e1;border-radius:14px;padding:20px}dialog::backdrop{background:#0f172a88}.dialog-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px}.dialog-toolbar h2{margin:0}#popupPreview{font-size:19px;line-height:1.8}button:focus-visible,textarea:focus-visible{outline:3px solid #d97706;outline-offset:3px}
+dialog{width:min(900px,calc(100vw - 32px));max-height:85vh;overflow:auto;border:1px solid #cbd5e1;border-radius:14px;padding:20px}dialog::backdrop{background:#0f172a88}.dialog-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px}.dialog-toolbar h2{margin:0}#popupPreview{font-size:19px;line-height:1.6}button:focus-visible,textarea:focus-visible{outline:3px solid #d97706;outline-offset:3px}
 .api-settings{margin-bottom:16px}.api-settings summary{font-weight:700;cursor:pointer}.api-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.api-fields label{display:flex;flex-direction:column;gap:6px}.api-fields [hidden]{display:none}.api-fields input,.api-fields select{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:6px;font:inherit}.api-note,.api-fields small{font-size:13px;line-height:1.6}.api-settings p{line-height:1.6}.sync-state{font-size:14px;line-height:1.5;color:#64748b}.sync-state[data-state="stale"],.sync-state[data-state="pending"]{color:#9a3412}.sync-state[data-state="error"]{color:#b91c1c}#preview[data-stale="true"]{opacity:.55;border-style:dashed}.local-storage-notice{display:block;margin:6px 0 0;white-space:normal;overflow-wrap:anywhere;color:#d00000;font-size:16px;line-height:1.6;animation:storage-notice-blink 1.8s ease-in-out infinite}@keyframes storage-notice-blink{0%,100%{opacity:1}50%{opacity:.35}}@media(prefers-reduced-motion:reduce){.local-storage-notice{animation:none}}@media(max-width:600px){.local-storage-notice{display:block;margin-left:0;margin-top:6px}}.workflow-figure{margin:0 0 20px;padding:8px;background:white;border:1px solid #dbe3ee;border-radius:14px;overflow-x:auto}.workflow-figure img{display:block;width:100%;min-width:760px;height:auto}</style>
 <style id="project-license-style">.project-license{margin:24px auto;padding:16px 20px;max-width:1100px;text-align:center;font:14px/1.8 system-ui,sans-serif;color:#475569;overflow-wrap:anywhere}.project-license a{color:#1d4f81;text-decoration:underline}.project-license p{margin:4px 0}@media print{.project-license{display:none}}</style>
 </head>
@@ -52,7 +52,7 @@ dialog{width:min(900px,calc(100vw - 32px));max-height:85vh;overflow:auto;border:
 </main>
 <dialog id="previewDialog" aria-labelledby="previewDialogTitle"><div class="dialog-toolbar"><h2 id="previewDialogTitle">題目渲染預覽</h2><button id="closePreview" type="button">關閉</button></div><div id="popupPreview"></div></dialog>
 <dialog id="variantDialog" class="variant-dialog" aria-labelledby="variantDialogTitle"><div class="dialog-toolbar"><h2 id="variantDialogTitle">類似題 JSON 與預覽</h2><button id="closeVariant" type="button">關閉類似題</button></div><p class="variant-note">AI 檢核已通過，仍請人工核對數學條件與附圖。原題未覆蓋。</p><div class="variant-layout"><section><h3>新題目 JSON</h3><textarea id="variantJson" readonly aria-label="類似題 JSON" spellcheck="false"></textarea><button id="copyVariant" type="button">複製新 JSON</button><span id="variantCopyStatus" role="status"></span></section><section><h3>新題目預覽</h3><div id="variantPreview"></div></section></div></dialog>
-<script type="module" src="api-settings.js?v=20261104-variant"></script>
+<script type="module" src="api-settings.js?v=20261104-source-layout"></script>
 <script>
 const $=id=>document.getElementById(id);let imageData=null;
 const report=s=>$('status').textContent=s;
@@ -111,12 +111,12 @@ function renderQuestion(data,preview=$('preview')){
  validate(data);if(!window.katex||!window.renderMathInElement||!window.DOMPurify)throw Error('KaTeX 或 SVG 安全套件尚未載入，請確認網路。');
  const fragment=document.createDocumentFragment();
  for(const b of data.blocks){
-  const node=document.createElement('div');node.className='question-block';
+  const node=document.createElement(b.type==='svg'?'div':'span');node.className='question-block';
   if(b.type==='text'){
    node.textContent=b.value;
    renderMathInElement(node,{delimiters:[{left:'\\(',right:'\\)',display:false},{left:'$',right:'$',display:false}],throwOnError:true,trust:false});
   }
-  if(b.type==='latex'){node.classList.add('math-block');katex.render(b.value,node,{displayMode:true,throwOnError:true,trust:false});}
+  if(b.type==='latex'){node.classList.add('math-block');katex.render(b.value,node,{displayMode:false,throwOnError:true,trust:false});}
   if(b.type==='svg'){
    node.classList.add('svg-block');
    const safe=DOMPurify.sanitize(b.value,{USE_PROFILES:{svg:true},FORBID_TAGS:['script','foreignObject','image','use','style','animate','set'],FORBID_ATTR:['href','xlink:href','src']});
