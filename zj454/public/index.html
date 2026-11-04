@@ -60,7 +60,28 @@ dialog{width:min(900px,calc(100vw - 32px));max-height:85vh;overflow:auto;border:
 <script>
 const $=id=>document.getElementById(id);let imageData=null;
 const report=s=>$('status').textContent=s;
-let sourceDirty=false,operation=0,imageVersion=0,imageLoading=false,renderTimer;
+let sourceDirty=false,operation=0,imageVersion=0,imageLoading=false,renderTimer,clearRevision=0,stopConversionTimer=null;
+function clearQuestionWorkspace(){
+ operation++;imageVersion++;clearRevision++;clearTimeout(renderTimer);
+ if(stopConversionTimer)stopConversionTimer();stopConversionTimer=null;
+ imageData=null;imageLoading=false;sourceDirty=false;
+ for(const id of ['source','image','json','variantJson','conversionErrorText'])$(id).value='';
+ $('imagePreview').hidden=true;$('imagePreview').removeAttribute('src');
+ for(const id of ['preview','popupPreview','variantPreview'])$(id).replaceChildren();
+ $('preview').dataset.stale='false';
+ state('jsonState','等待輸入或轉換');state('previewState','等待 JSON');
+ for(const id of ['copyPreviewStatus','variantStatus','variantCopyStatus','conversionErrorCopyStatus','conversionCountdown'])$(id).textContent='';
+ for(const id of ['copy','openPreview','copyPreview'])$(id).disabled=true;
+ $('convert').disabled=false;$('variant').disabled=false;
+ $('conversionProgress').hidden=true;$('showConversionError').hidden=true;
+ for(const id of ['previewDialog','variantDialog','conversionErrorDialog'])if($(id).open)$(id).close();
+ report('已清除題目、截圖、JSON 與預覽，可輸入下一題。');
+}
+window.addEventListener('message',event=>{
+ if(event.source!==parent||parent===window||event.data?.type!=='handout-clear-question')return;
+ const allowed=new Set([location.origin,'http://127.0.0.1:5173','http://localhost:5173','http://127.0.0.1:5184','http://localhost:5184']);
+ if(allowed.has(event.origin))clearQuestionWorkspace();
+});
 function state(id,message,kind='ready'){$(id).textContent=message;$(id).dataset.state=kind;}
 function sourceChanged(){
  sourceDirty=true;operation++;
@@ -189,6 +210,7 @@ $('copyConversionError').addEventListener('click',async()=>{
  catch{$('conversionErrorText').focus();$('conversionErrorText').select();$('conversionErrorCopyStatus').textContent='無法自動複製，請按 Ctrl+C 複製已選取的訊息。';}
 });
 function startConversionProgress(){
+ const revision=clearRevision;
  $('showConversionError').hidden=true;$('conversionErrorText').value='';
  const started=Date.now(),estimateMs=60000;
  const panel=$('conversionProgress'),ring=$('conversionRing');
@@ -202,9 +224,9 @@ function startConversionProgress(){
    ? `預估剩餘 ${Math.ceil((estimateMs-elapsed)/1000)} 秒`
    : `超出預估，已等待 ${Math.floor(elapsed/1000)} 秒`;
  };
- update();const timer=setInterval(update,1000);
+ update();const timer=setInterval(update,1000);stopConversionTimer=()=>clearInterval(timer);
  return (outcome,errorMessage='')=>{
-  clearInterval(timer);panel.dataset.state=outcome;
+  clearInterval(timer);if(revision!==clearRevision)return;stopConversionTimer=null;panel.dataset.state=outcome;
   if(outcome==='success'){
    ring.style.setProperty('--progress',100);ring.setAttribute('aria-valuenow','100');$('conversionPercent').textContent='100%';
   }else{$('conversionPercent').textContent=outcome==='stale'?'—':'!';}
@@ -217,38 +239,38 @@ function startConversionProgress(){
  };
 }
 $('convert').addEventListener('click',async()=>{
- const button=$('convert');button.disabled=true;const current=++operation;
+ const button=$('convert');button.disabled=true;const current=++operation,revision=clearRevision;
  const source=$('source').value,image=imageData;
  const finishProgress=startConversionProgress();let outcome='error',errorMessage='';
  try{
   if(imageLoading)throw Error('圖片仍在讀取，請稍後重試。');
   const settings=window.getMathApiSettings?.();if(!settings)throw Error('API 設定尚未載入，請稍後重試。');
   report('正在轉換…');const data=await window.convertMathQuestion(settings,{text:source,image});validate(data);
-  if(current!==operation){outcome='stale';report('題目或 JSON 已變更，舊轉換結果未套用，請重新轉換。');return;}
+  if(current!==operation){outcome='stale';if(revision===clearRevision)report('題目或 JSON 已變更，舊轉換結果未套用，請重新轉換。');return;}
   clearTimeout(renderTimer);$('json').value=JSON.stringify(data,null,2);sourceDirty=false;
   if(refreshPreview())outcome='success';else errorMessage=$('status').textContent;
  }catch(e){
   if(current===operation){errorMessage='轉換失敗：'+(e.safeMessage||e.message||'發生未知錯誤，請稍後重試。');report(errorMessage);}
   else outcome='stale';
- }finally{finishProgress(outcome,errorMessage);button.disabled=false;}
+ }finally{finishProgress(outcome,errorMessage);if(revision===clearRevision)button.disabled=false;}
 });
 $('render').addEventListener('click',refreshPreview);
 $('copy').addEventListener('click',async()=>{try{const obj=validate(JSON.parse($('json').value));await navigator.clipboard.writeText(JSON.stringify(obj,null,2));report('JSON 已複製。');}catch(e){report('複製失敗：'+e.message);}});
 $('variant').addEventListener('click',async()=>{
  const button=$('variant');if(button.disabled)return;
- button.disabled=true;const current=++operation,snapshot=$('json').value;
+ button.disabled=true;const current=++operation,snapshot=$('json').value,revision=clearRevision;
  try{
   const original=validate(JSON.parse(snapshot));
   const settings=window.getMathApiSettings?.();if(!settings)throw Error('API 設定尚未載入，請稍後重試。');
   if(!window.generateMathVariant)throw Error('類似題模組尚未載入，請重新整理。');
   $('variantStatus').textContent='正在產生並檢核類似題（可能計費）…';
   const candidate=validate(await window.generateMathVariant(settings,original));
-  if(current!==operation||snapshot!==$('json').value){$('variantStatus').textContent='原題已變更，未開啟舊題目的類似題，請重新產生。';return;}
+  if(current!==operation||snapshot!==$('json').value){if(revision===clearRevision)$('variantStatus').textContent='原題已變更，未開啟舊題目的類似題，請重新產生。';return;}
   renderQuestion(candidate,$('variantPreview'));
   $('variantJson').value=JSON.stringify(candidate,null,2);$('variantCopyStatus').textContent='';
   $('variantDialog').showModal();$('variantStatus').textContent='類似題已產生，原題保留。';
- }catch(error){$('variantStatus').textContent='類似題產生失敗：'+error.message;}
- finally{button.disabled=false;}
+ }catch(error){if(revision===clearRevision)$('variantStatus').textContent='類似題產生失敗：'+error.message;}
+ finally{if(revision===clearRevision)button.disabled=false;}
 });
 $('closeVariant').addEventListener('click',()=>$('variantDialog').close());
 $('copyVariant').addEventListener('click',async()=>{

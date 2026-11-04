@@ -1101,11 +1101,15 @@ copyJsonPromptButton.addEventListener("click", () => {
   const frame = document.querySelector("#mathJsonFrame");
   if (!frame.getAttribute("src")) {
     const local = ["127.0.0.1", "localhost"].includes(location.hostname);
-    frame.src = local ? "http://127.0.0.1:5185/?v=20261104-conversion-errors" : "../zj454/public/index.html?v=20261104-conversion-errors";
+    frame.src = local ? "http://127.0.0.1:5185/?v=20261104-clear-workspace" : "../zj454/public/index.html?v=20261104-clear-workspace";
   }
   mathJsonDialog.showModal();
 });
 document.querySelector("#closeMathJsonDialog").addEventListener("click", () => mathJsonDialog.close());
+document.querySelector("#clearMathJsonDialog").addEventListener("click", () => {
+  const frame = document.querySelector("#mathJsonFrame");
+  if (frame.getAttribute("src")) frame.contentWindow.postMessage({ type: "handout-clear-question" }, new URL(frame.src).origin);
+});
 
 function fitAnswerText(container,textBlock) {
   if(!container.clientWidth||!container.clientHeight)return;
@@ -1135,7 +1139,7 @@ async function ensureAnswerModule(){
     frame.addEventListener('load',()=>{clearTimeout(timeout);frame.dataset.ready='true';resolve();},{once:true});
     if(!frame.getAttribute('src')){
       const local=['127.0.0.1','localhost'].includes(location.hostname);
-      frame.src=local?'http://127.0.0.1:5185/?v=20261104-conversion-errors':'../zj454/public/index.html?v=20261104-conversion-errors';
+      frame.src=local?'http://127.0.0.1:5185/?v=20261104-clear-workspace':'../zj454/public/index.html?v=20261104-clear-workspace';
     }
   });return frame;
 }

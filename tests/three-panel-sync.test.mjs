@@ -4,8 +4,8 @@ import { readFileSync } from 'node:fs';
 const html=readFileSync(new URL('../zj454/public/index.html',import.meta.url),'utf8');
 const script=html.split('<script>')[1].split('</script>')[0];
 const elements=new Map(),timers=new Map(),intervals=new Map();let timerId=0,now=0;
-function element(id){if(!elements.has(id))elements.set(id,{value:'',textContent:'',dataset:{},disabled:false,hidden:true,events:{},style:{setProperty(name,value){this[name]=value;}},showModal(){this.open=true;},close(){this.open=false;},setAttribute(name,value){this[name]=value;},addEventListener(name,fn){this.events[name]=fn;},removeAttribute(name){delete this[name];}});return elements.get(id);}
-const context=vm.createContext({Date:{now:()=>now},document:{getElementById:element,querySelectorAll:()=>[],addEventListener(){}},window:{getMathApiSettings:()=>({provider:'fake'})},setTimeout:fn=>{timers.set(++timerId,fn);return timerId;},clearTimeout:id=>timers.delete(id),setInterval:fn=>{intervals.set(++timerId,fn);return timerId;},clearInterval:id=>intervals.delete(id),FileReader:class{}});
+function element(id){if(!elements.has(id))elements.set(id,{value:'',textContent:'',dataset:{},disabled:false,hidden:true,events:{},style:{setProperty(name,value){this[name]=value;}},replaceChildren(){this.textContent='';},showModal(){this.open=true;},close(){this.open=false;},setAttribute(name,value){this[name]=value;},addEventListener(name,fn){this.events[name]=fn;},removeAttribute(name){delete this[name];}});return elements.get(id);}
+const context=vm.createContext({Date:{now:()=>now},document:{getElementById:element,querySelectorAll:()=>[],addEventListener(){}},window:{getMathApiSettings:()=>({provider:'fake'}),addEventListener(){}},setTimeout:fn=>{timers.set(++timerId,fn);return timerId;},clearTimeout:id=>timers.delete(id),setInterval:fn=>{intervals.set(++timerId,fn);return timerId;},clearInterval:id=>intervals.delete(id),FileReader:class{}});
 vm.runInContext(script,context);
 // Render implementation is covered by the four-image browser test; isolate UI synchronization here.
 vm.runInContext(`renderQuestion=(data,target=$('preview'))=>{if(!data.blocks?.length)throw Error('empty blocks');target.textContent=data.blocks.map(b=>b.value).join('|');};`,context);
@@ -99,3 +99,20 @@ context.window.generateMathVariant=async()=>{throw Error('檢核失敗');};
 await element('variant').events.click();assert.match(element('variantStatus').textContent,/檢核失敗/);
 assert.equal(element('variantDialog').open,false);
 console.log('Variant dialog, separate JSON/preview, original preservation, stale result and failure states: passed');
+
+// Clearing invalidates pending conversions without touching API settings.
+const savedGetter=context.window.getMathApiSettings;
+let resolveCleared;
+context.window.convertMathQuestion=()=>new Promise(resolve=>{resolveCleared=resolve;});
+const clearedRequest=element('convert').events.click();
+element('source').value='待清除題目';element('imagePreview').src='data:image/png;base64,test';
+vm.runInContext('clearQuestionWorkspace()',context);
+assert.equal(element('source').value,'');assert.equal(element('json').value,'');
+assert.equal(element('preview').textContent,'');assert.equal(element('imagePreview').hidden,true);
+assert.equal(element('conversionProgress').hidden,true);assert.equal(intervals.size,0);
+assert.equal(element('copyPreview').disabled,true);assert.equal(element('convert').disabled,false);
+assert.equal(context.window.getMathApiSettings,savedGetter);
+resolveCleared({blocks:[{type:'text',value:'不得回填的舊結果'}]});await clearedRequest;
+assert.equal(element('json').value,'');assert.equal(element('conversionProgress').hidden,true);
+assert.match(element('status').textContent,/已清除/);
+console.log('Clear workspace, stop progress and ignore in-flight results while preserving API settings: passed');
