@@ -1,7 +1,7 @@
-import { solutionInstructions, solutionSchema, validateSolution, parseSolution } from './solution-spec.js?v=20261104-geometry';
+import { solutionInstructions, solutionSchema, validateSolution, parseSolution } from './solution-spec.js?v=20261104-geometry-dimensions';
 import { normalizeSettings, callProvider } from './providers.js';
-import { instructions, responseSchema } from './question-spec.js?v=20261104-geometry';
-import { createVariant } from './variant-spec.js?v=20261104-geometry';
+import { instructions, responseSchema } from './question-spec.js?v=20261104-geometry-dimensions';
+import { createVariant } from './variant-spec.js?v=20261104-geometry-dimensions';
 import { probeProviderConnection } from './connection-probe.js?v=20261104-monitor';
 export const usesLocalBackend = ['127.0.0.1', 'localhost'].includes(location.hostname) && location.port === '5185';
 async function backend(path, body) {
