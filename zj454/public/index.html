@@ -15,6 +15,7 @@
 textarea{width:100%;min-height:330px;padding:12px;border:1px solid #cbd5e1;border-radius:8px;resize:vertical;font:14px/1.6 Consolas,monospace}
 button{background:#2563a1;color:white;border:0;border-radius:8px;padding:10px 14px;margin:8px 6px 0 0;cursor:pointer}button:disabled{opacity:.5}
 .copy-preview-button{background:#ffad3b;color:#000;border:2px solid #000;box-shadow:3px 3px 0 #000}.copy-preview-button:active{transform:translate(2px,2px);box-shadow:1px 1px 0 #000}.copy-preview-status{display:block;margin:10px 0;font-size:14px;line-height:1.5;color:#1d4f81}
+.conversion-error-dialog textarea{min-height:160px;max-height:45vh;color:#991b1b;background:#fff7f7;font-family:inherit}.conversion-error-dialog [role="status"]{margin-left:8px;font-size:14px}#showConversionError[hidden]{display:none}
 .conversion-actions{display:flex;align-items:center;flex-wrap:wrap;gap:14px;margin-top:16px}.conversion-actions button{margin:0}.conversion-progress{display:flex;align-items:center;gap:10px;font-size:14px;color:#475569}.conversion-progress[hidden]{display:none}.progress-ring{--progress:0;position:relative;display:grid;place-items:center;flex-shrink:0;width:58px;height:58px;border-radius:50%;background:conic-gradient(#2563a1 calc(var(--progress)*1%),#e2e8f0 0);font-size:13px;font-weight:700;color:#1d4f81}.progress-ring::before{content:"";position:absolute;inset:5px;border-radius:50%;background:white}.progress-ring span{position:relative}.conversion-progress[data-state="error"]{color:#b91c1c}.conversion-progress[data-state="success"]{color:#166534}
 #preview,#variantPreview{min-height:330px;border:1px solid #e2e8f0;border-radius:8px;padding:16px;font-size:19px;line-height:1.6}
 .variant-dialog{width:min(1200px,calc(100vw - 32px))}.variant-layout{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.variant-layout>section{min-width:0}.variant-layout textarea{min-height:330px}.variant-note{font-size:14px;line-height:1.6;color:#64748b}@media(max-width:760px){.variant-layout{grid-template-columns:1fr}}
@@ -47,10 +48,11 @@ dialog{width:min(900px,calc(100vw - 32px));max-height:85vh;overflow:auto;border:
 <section class="test-controls" aria-label="截圖模擬測試"><strong>GPT 截圖模擬測試</strong><p>以下為此對話依四張截圖建立的 JSON，不會呼叫 AI API。 <a id="caseComparisonLink" href="../../tests/four-images.html" target="_blank" rel="noopener">查看 v4 四圖比對</a></p><button type="button" data-case="1">測試 1：圓的分數</button><button type="button" data-case="2">測試 2：分割長方形</button><button type="button" data-case="3">測試 3：平行四邊形</button><button type="button" data-case="4">測試 4：扇形辨識</button></section>
 <figure class="workflow-figure"><img src="workflow.svg?v=1" alt="操作流程：①貼上題目文字或截圖，按 AI 轉換（可能計費）→②核對或編輯 JSON，停頓後自動更新→③檢查 SVG 與 KaTeX 預覽。修改①需重新轉換；修改②不呼叫 API。"></figure>
 <main class="workspace">
-<section class="panel"><h2>① 原始題目</h2><textarea id="source" placeholder="貼上數學題目文字..."></textarea><p>題目截圖：可在本頁按 Ctrl+V 貼上，或選擇圖片檔。</p><input id="image" type="file" accept="image/png,image/jpeg,image/webp"><img id="imagePreview" alt="題目截圖" hidden><div class="conversion-actions"><button id="convert">AI 轉換 JSON</button><div id="conversionProgress" class="conversion-progress" hidden><div id="conversionRing" class="progress-ring" role="progressbar" aria-label="預估轉換進度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="conversionPercent">0%</span></div><span id="conversionCountdown"></span></div></div></section>
+<section class="panel"><h2>① 原始題目</h2><textarea id="source" placeholder="貼上數學題目文字..."></textarea><p>題目截圖：可在本頁按 Ctrl+V 貼上，或選擇圖片檔。</p><input id="image" type="file" accept="image/png,image/jpeg,image/webp"><img id="imagePreview" alt="題目截圖" hidden><div class="conversion-actions"><button id="convert">AI 轉換 JSON</button><div id="conversionProgress" class="conversion-progress" hidden><div id="conversionRing" class="progress-ring" role="progressbar" aria-label="預估轉換進度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="conversionPercent">0%</span></div><span id="conversionCountdown"></span></div><button id="showConversionError" type="button" hidden>查看錯誤</button></div></section>
 <section class="panel"><h2>② JSON</h2><p id="jsonState" class="sync-state" role="status">等待輸入或轉換</p><textarea id="json" spellcheck="false" placeholder='{"blocks":[]}'></textarea><p><button id="render">渲染 JSON</button><button id="copy">複製 JSON</button><button id="variant" type="button">類似題（AI）</button></p><p class="variant-note">類似題會合理更換數字並調整敘述。產生與 AI 檢核各呼叫一次 API，可能計費；原題保留。</p><p id="variantStatus" class="sync-state" role="status"></p></section>
 <section class="panel"><h2>③ 渲染預覽</h2><p id="previewState" class="sync-state" role="status">等待 JSON</p><button id="openPreview" type="button">彈跳預覽</button><button id="sample" type="button">載入測試題</button><button id="copyPreview" class="copy-preview-button" type="button" disabled title="複製文字、公式及附圖，貼到 Anytype 一般文字區塊">複製排版（Anytype）</button><span id="copyPreviewStatus" class="copy-preview-status" role="status"></span><div id="preview"></div></section>
 </main>
+<dialog id="conversionErrorDialog" class="conversion-error-dialog" aria-labelledby="conversionErrorTitle"><div class="dialog-toolbar"><h2 id="conversionErrorTitle">AI 轉換失敗</h2><button id="closeConversionError" type="button">關閉</button></div><p>請依下方訊息檢查設定；也可複製訊息提供協助排查。</p><textarea id="conversionErrorText" readonly aria-label="完整錯誤訊息" spellcheck="false"></textarea><button id="copyConversionError" type="button">複製錯誤訊息</button><span id="conversionErrorCopyStatus" role="status"></span></dialog>
 <dialog id="previewDialog" aria-labelledby="previewDialogTitle"><div class="dialog-toolbar"><h2 id="previewDialogTitle">題目渲染預覽</h2><button id="closePreview" type="button">關閉</button></div><div id="popupPreview"></div></dialog>
 <dialog id="variantDialog" class="variant-dialog" aria-labelledby="variantDialogTitle"><div class="dialog-toolbar"><h2 id="variantDialogTitle">類似題 JSON 與預覽</h2><button id="closeVariant" type="button">關閉類似題</button></div><p class="variant-note">AI 檢核已通過，仍請人工核對數學條件與附圖。原題未覆蓋。</p><div class="variant-layout"><section><h3>新題目 JSON</h3><textarea id="variantJson" readonly aria-label="類似題 JSON" spellcheck="false"></textarea><button id="copyVariant" type="button">複製新 JSON</button><span id="variantCopyStatus" role="status"></span></section><section><h3>新題目預覽</h3><div id="variantPreview"></div></section></div></dialog>
 <script type="module" src="api-settings.js?v=20261104-source-layout"></script>
@@ -175,7 +177,19 @@ document.querySelectorAll('[data-case]').forEach(button=>button.addEventListener
   report(`模擬測試 ${id}：來源截圖與 GPT 生成 JSON 已載入，公式與 SVG 渲染完成（未呼叫 API）。`);
  }catch(e){if(current===operation)report('測試失敗：'+e.message);}
 }));
+function showConversionError(){
+ if(!$('conversionErrorText').value)return;
+ $('conversionErrorCopyStatus').textContent='';
+ if(!$('conversionErrorDialog').open)$('conversionErrorDialog').showModal();
+}
+$('showConversionError').addEventListener('click',showConversionError);
+$('closeConversionError').addEventListener('click',()=>$('conversionErrorDialog').close());
+$('copyConversionError').addEventListener('click',async()=>{
+ try{await navigator.clipboard.writeText($('conversionErrorText').value);$('conversionErrorCopyStatus').textContent='已複製錯誤訊息';}
+ catch{$('conversionErrorText').focus();$('conversionErrorText').select();$('conversionErrorCopyStatus').textContent='無法自動複製，請按 Ctrl+C 複製已選取的訊息。';}
+});
 function startConversionProgress(){
+ $('showConversionError').hidden=true;$('conversionErrorText').value='';
  const started=Date.now(),estimateMs=60000;
  const panel=$('conversionProgress'),ring=$('conversionRing');
  panel.hidden=false;panel.dataset.state='running';
@@ -189,27 +203,34 @@ function startConversionProgress(){
    : `超出預估，已等待 ${Math.floor(elapsed/1000)} 秒`;
  };
  update();const timer=setInterval(update,1000);
- return outcome=>{
+ return (outcome,errorMessage='')=>{
   clearInterval(timer);panel.dataset.state=outcome;
   if(outcome==='success'){
    ring.style.setProperty('--progress',100);ring.setAttribute('aria-valuenow','100');$('conversionPercent').textContent='100%';
   }else{$('conversionPercent').textContent=outcome==='stale'?'—':'!';}
   const label=outcome==='success'?'轉換完成':outcome==='stale'?'結果未套用':'轉換失敗';
   $('conversionCountdown').textContent=`${label} · 耗時 ${Math.floor((Date.now()-started)/1000)} 秒`;
+  if(outcome==='error'){
+   $('conversionErrorText').value=errorMessage||'轉換未完成，請確認 API 已解鎖、題目內容及網路連線後重試。';
+   $('showConversionError').hidden=false;showConversionError();
+  }
  };
 }
 $('convert').addEventListener('click',async()=>{
  const button=$('convert');button.disabled=true;const current=++operation;
  const source=$('source').value,image=imageData;
- const finishProgress=startConversionProgress();let outcome='error';
+ const finishProgress=startConversionProgress();let outcome='error',errorMessage='';
  try{
   if(imageLoading)throw Error('圖片仍在讀取，請稍後重試。');
   const settings=window.getMathApiSettings?.();if(!settings)throw Error('API 設定尚未載入，請稍後重試。');
   report('正在轉換…');const data=await window.convertMathQuestion(settings,{text:source,image});validate(data);
   if(current!==operation){outcome='stale';report('題目或 JSON 已變更，舊轉換結果未套用，請重新轉換。');return;}
   clearTimeout(renderTimer);$('json').value=JSON.stringify(data,null,2);sourceDirty=false;
-  if(refreshPreview())outcome='success';
- }catch(e){if(current===operation)report('轉換失敗：'+e.message);}finally{finishProgress(outcome);button.disabled=false;}
+  if(refreshPreview())outcome='success';else errorMessage=$('status').textContent;
+ }catch(e){
+  if(current===operation){errorMessage='轉換失敗：'+(e.safeMessage||e.message||'發生未知錯誤，請稍後重試。');report(errorMessage);}
+  else outcome='stale';
+ }finally{finishProgress(outcome,errorMessage);button.disabled=false;}
 });
 $('render').addEventListener('click',refreshPreview);
 $('copy').addEventListener('click',async()=>{try{const obj=validate(JSON.parse($('json').value));await navigator.clipboard.writeText(JSON.stringify(obj,null,2));report('JSON 已複製。');}catch(e){report('複製失敗：'+e.message);}});
