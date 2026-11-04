@@ -7,7 +7,7 @@ function getTodayLocalDateValue() {
 }
 
 const DEFAULT_SETTINGS = {
-  title: "大南阿嬤國小",
+  title: "阿邦老師AI數學題",
   className: "",
   studentName: "",
   date: getTodayLocalDateValue(),
@@ -110,6 +110,7 @@ function loadSettings() {
 
     const parsed = { ...DEFAULT_SETTINGS, ...JSON.parse(raw), date: getTodayLocalDateValue() };
     parsed.title = normalizeTitle(parsed.title);
+    if (parsed.title === "大南阿嬤國小") parsed.title = DEFAULT_SETTINGS.title;
     return parsed;
   } catch {
     return { ...DEFAULT_SETTINGS };
