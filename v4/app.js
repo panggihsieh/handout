@@ -1101,11 +1101,31 @@ copyJsonPromptButton.addEventListener("click", () => {
   const frame = document.querySelector("#mathJsonFrame");
   if (!frame.getAttribute("src")) {
     const local = ["127.0.0.1", "localhost"].includes(location.hostname);
-    frame.src = local ? "http://127.0.0.1:5185/?v=20261104-license-badge" : "../zj454/public/index.html?v=20261104-license-badge";
+    frame.src = local ? "http://127.0.0.1:5185/?v=20261104-ai-connection" : "../zj454/public/index.html?v=20261104-ai-connection";
   }
   mathJsonDialog.showModal();
 });
 document.querySelector("#closeMathJsonDialog").addEventListener("click", () => mathJsonDialog.close());
+const aiConnectionLabels = { locked: 'AI：未設定或未解鎖', ready: 'AI：已解鎖，待驗證', checking: 'AI：連線中…', connected: 'AI：最近連線成功', error: 'AI：請求失敗', offline: 'AI：網路離線' };
+function updateAiConnection(state) {
+  if (!Object.hasOwn(aiConnectionLabels, state)) return;
+  const effective = navigator.onLine === false ? 'offline' : state;
+  document.querySelector('#aiConnectionButton').dataset.state = effective;
+  document.querySelector('#aiConnectionText').textContent = aiConnectionLabels[effective];
+  document.querySelector('#aiConnectionIcon').src = effective === 'connected' ? 'assets/connection.gif' : 'assets/no-connection.png';
+}
+window.addEventListener('message', event => {
+  const frame = document.querySelector('#mathJsonFrame');
+  if (!frame.getAttribute('src') || event.source !== frame.contentWindow || event.origin !== new URL(frame.src).origin || event.data?.type !== 'handout-ai-connection') return;
+  updateAiConnection(event.data.state);
+});
+document.querySelector('#aiConnectionButton').addEventListener('click', () => copyJsonPromptButton.click());
+window.addEventListener('offline', () => updateAiConnection('offline'));
+window.addEventListener('online', () => {
+  updateAiConnection('locked');
+  const frame = document.querySelector('#mathJsonFrame');
+  if (frame.getAttribute('src')) frame.contentWindow.postMessage({ type: 'handout-ai-connection-query' }, new URL(frame.src).origin);
+});
 document.querySelector("#clearMathJsonDialog").addEventListener("click", () => {
   const frame = document.querySelector("#mathJsonFrame");
   if (frame.getAttribute("src")) frame.contentWindow.postMessage({ type: "handout-clear-question" }, new URL(frame.src).origin);
@@ -1139,11 +1159,12 @@ async function ensureAnswerModule(){
     frame.addEventListener('load',()=>{clearTimeout(timeout);frame.dataset.ready='true';resolve();},{once:true});
     if(!frame.getAttribute('src')){
       const local=['127.0.0.1','localhost'].includes(location.hostname);
-      frame.src=local?'http://127.0.0.1:5185/?v=20261104-license-badge':'../zj454/public/index.html?v=20261104-license-badge';
+      frame.src=local?'http://127.0.0.1:5185/?v=20261104-ai-connection':'../zj454/public/index.html?v=20261104-ai-connection';
     }
   });return frame;
 }
 document.querySelector('#mathJsonFrame').addEventListener('load',event=>event.target.dataset.ready='true');
+ensureAnswerModule().then(frame => frame.contentWindow.postMessage({ type: 'handout-ai-connection-query' }, new URL(frame.src).origin)).catch(() => updateAiConnection('error'));
 async function questionForAnswer(item){
   if(item.type==='image')return {text:'請解答這張圖片中的題目。',image:item.value};
   if(item.type!=='json')return {text:item.value,image:null};
