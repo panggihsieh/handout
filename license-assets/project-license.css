@@ -1,0 +1,35 @@
+.project-license-banner {
+  margin: 0 0 16px;
+  font: 14px/1.6 system-ui, sans-serif;
+  text-align: left;
+}
+
+.project-license-banner a {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  color: #334155;
+  text-decoration: none;
+}
+
+.project-license-banner a:hover span {
+  text-decoration: underline;
+}
+
+.project-license-banner a:focus-visible {
+  outline: 3px solid #d97706;
+  outline-offset: 4px;
+}
+
+.project-license-banner img {
+  display: block;
+  width: 88px;
+  height: 31px;
+}
+
+@media print {
+  .project-license-banner {
+    display: none;
+  }
+}

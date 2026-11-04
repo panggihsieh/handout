@@ -1,0 +1,6 @@
+# Keep the main worksheet public. v4 and its tools remain in Git only.
+exclude:
+  - v4
+  - zj454
+  - tests
+  - node_modules

@@ -245,6 +245,8 @@ https://panggihsieh.github.io/handout/
 
 注意：GitHub Pages 只能提供靜態前端頁面；API server 需要在本機或其他 Node.js 主機上執行。
 
+目前僅公開主版網站。`_config.yml` 將 `v4/`、其 JSON 工具 `zj454/` 與 `tests/` 排除於 GitHub Pages 發佈，這些檔案仍保留在儲存庫供本機開發。公開儲存庫的原始碼仍可被查看；停止網站部署不等同將原始碼設為私人。
+
 
 ## 授權與智慧財產權
 
