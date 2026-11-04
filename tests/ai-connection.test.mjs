@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 
 const source = readFileSync(new URL('../zj454/public/api-settings.js', import.meta.url), 'utf8').replace(/^import .*;\r?$/gm, '');
 const elements = new Map(), listeners = new Map(), messages = [], storage = new Map();
+const timers = new Map(); let timerId = 0, probeCalls = 0, probeFailure = false, pendingProbe;
 function element(id) {
   if (!elements.has(id)) elements.set(id, { value: '', textContent: '', hidden: false, events: {}, details: {}, closest() { return this.details; }, scrollIntoView() {}, focus() { this.focused = true; }, addEventListener(type, fn) { this.events[type] = fn; } });
   return elements.get(id);
@@ -18,6 +19,8 @@ const context = vm.createContext({
   parent: { postMessage(message, origin) { messages.push({ message, origin }); } },
   localStorage: { getItem: name => storage.get(name), setItem: (name, value) => storage.set(name, value), removeItem: name => storage.delete(name) },
   usesLocalBackend: false,
+  setTimeout(fn, delay) { timers.set(++timerId, { fn, delay }); return timerId; }, clearTimeout(id) { timers.delete(id); },
+  probeConnection: async () => { probeCalls++; if (pendingProbe) await pendingProbe; if (probeFailure) throw Error('metadata probe failed'); },
   openSettings: async () => fakeSettings,
   verifyAndSeal: async (settings, password, verify) => { await verify(); return { ciphertext: 'encrypted-test' }; },
   testConnection: async () => { apiCalls++; if (connectionFailure) throw Error('simulated offline API'); if (pendingConnection) await pendingConnection; },
@@ -77,4 +80,35 @@ assert.equal(state(), 'connected');
 assert.ok(messages.every(item => item.origin === 'https://example.test'));
 assert.ok(!JSON.stringify(messages).includes(fakeSettings.apiKey));
 assert.ok(!JSON.stringify(messages).includes('test-password'));
+const monitorState = () => messages.filter(item => item.message.type === 'handout-ai-monitor').at(-1)?.message;
+const nextTick = async () => { const [id, timer] = timers.entries().next().value; timers.delete(id); await timer.fn(); };
+const paidCallsBeforeMonitor = apiCalls;
+await send('handout-ai-monitor-toggle');
+assert.equal(monitorState().enabled, true); assert.equal(probeCalls, 1); assert.equal(state(), 'verified');
+assert.equal([...timers.values()][0].delay, 60000);
+await nextTick(); assert.equal(probeCalls, 2); assert.equal(apiCalls, paidCallsBeforeMonitor);
+await send('handout-ai-connect'); assert.equal(probeCalls, 3); assert.equal(apiCalls, paidCallsBeforeMonitor); assert.equal(timers.size, 1);
+probeFailure = true; await nextTick(); assert.equal(state(), 'error');
+assert.equal([...timers.values()][0].delay, 120000);
+probeFailure = false; await nextTick(); assert.equal(state(), 'verified');
+assert.equal([...timers.values()][0].delay, 60000);
+context.navigator.onLine = false;
+for (const fn of listeners.get('offline')) fn();
+const probesBeforeOffline = probeCalls; await nextTick(); assert.equal(probeCalls, probesBeforeOffline);
+context.navigator.onLine = true;
+for (const fn of listeners.get('online')) fn();
+assert.equal([...timers.values()][0].delay, 0);
+let finishProbe;
+pendingProbe = new Promise(resolve => { finishProbe = resolve; });
+const runningProbe = nextTick(); assert.equal(timers.size, 0);
+await send('handout-ai-monitor-toggle'); assert.equal(monitorState().enabled, false);
+finishProbe(); await runningProbe; pendingProbe = null;
+assert.equal(timers.size, 0);
+await send('handout-ai-monitor-toggle');
+click('lockApiSettings'); assert.equal(monitorState().enabled, false); assert.equal(timers.size, 0);
+await send('handout-ai-monitor-toggle'); assert.equal(monitorState().waitingForUnlock, true);
+await click('unlockApiSettings'); assert.equal(state(), 'verified');
+assert.equal(apiCalls, paidCallsBeforeMonitor);
+click('lockApiSettings'); assert.equal(timers.size, 0);
+console.log('Continuous metadata monitoring: no paid test calls, serial scheduling, backoff, offline pause, stop and lock cleanup passed.');
 console.log('AI connection status: lock/unlock, verification, request results, stale responses, offline and secret-free trusted messages passed (mock only).');

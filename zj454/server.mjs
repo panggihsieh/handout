@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import { fileURLToPath } from "node:url";
 import { callProvider, normalizeSettings } from "./providers.mjs";
+import { probeProviderConnection } from "./public/connection-probe.js";
 
 import { solutionInstructions, solutionSchema, parseSolution } from "./public/solution-spec.js";
 import { createVariant } from "./public/variant-spec.js";
@@ -66,6 +67,10 @@ app.post("/api/test", async (req, res) => {
   } catch (error) {
     res.status(error.status || 422).json({ error: error.safeMessage || "連線失敗，請確認金鑰、模型與網路。" });
   }
+});
+app.post('/api/probe', async (req, res) => {
+  try { res.json(await probeProviderConnection(req.body?.settings)); }
+  catch (error) { res.status(422).json({ error: error.message }); }
 });
 
 app.use((error, req, res, next) => {

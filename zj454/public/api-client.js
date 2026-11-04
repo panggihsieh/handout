@@ -2,6 +2,7 @@ import { solutionInstructions, solutionSchema, validateSolution, parseSolution }
 import { normalizeSettings, callProvider } from './providers.js';
 import { instructions, responseSchema } from './question-spec.js?v=20261104-variant';
 import { createVariant } from './variant-spec.js?v=20261104-variant';
+import { probeProviderConnection } from './connection-probe.js?v=20261104-monitor';
 export const usesLocalBackend = ['127.0.0.1', 'localhost'].includes(location.hostname) && location.port === '5185';
 async function backend(path, body) {
   const response = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -18,6 +19,10 @@ export async function testConnection(settings) {
   if (usesLocalBackend) return backend('/api/test', { settings });
   await direct(settings, { text: '請只回答 OK。', test: true });
   return { message: '連線與模型存取成功；截圖辨識品質請另外測試。' };
+}
+export async function probeConnection(settings) {
+  if (usesLocalBackend) return backend('/api/probe', { settings });
+  return probeProviderConnection(settings);
 }
 export async function convertQuestion(settings, { text, image }) {
   if (usesLocalBackend) return backend('/api/convert', { settings, text, image });

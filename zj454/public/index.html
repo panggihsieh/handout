@@ -57,7 +57,7 @@ dialog{width:min(900px,calc(100vw - 32px));max-height:85vh;overflow:auto;border:
 <dialog id="conversionErrorDialog" class="conversion-error-dialog" aria-labelledby="conversionErrorTitle"><div class="dialog-toolbar"><h2 id="conversionErrorTitle">AI 轉換失敗</h2><button id="closeConversionError" type="button">關閉</button></div><p>請依下方訊息檢查設定；也可複製訊息提供協助排查。</p><textarea id="conversionErrorText" readonly aria-label="完整錯誤訊息" spellcheck="false"></textarea><button id="copyConversionError" type="button">複製錯誤訊息</button><span id="conversionErrorCopyStatus" role="status"></span></dialog>
 <dialog id="previewDialog" aria-labelledby="previewDialogTitle"><div class="dialog-toolbar"><h2 id="previewDialogTitle">題目渲染預覽</h2><button id="closePreview" type="button">關閉</button></div><div id="popupPreview"></div></dialog>
 <dialog id="variantDialog" class="variant-dialog" aria-labelledby="variantDialogTitle"><div class="dialog-toolbar"><h2 id="variantDialogTitle">類似題 JSON 與預覽</h2><button id="closeVariant" type="button">關閉類似題</button></div><p class="variant-note">AI 檢核已通過，仍請人工核對數學條件與附圖。原題未覆蓋。</p><div class="variant-layout"><section><h3>新題目 JSON</h3><textarea id="variantJson" readonly aria-label="類似題 JSON" spellcheck="false"></textarea><button id="copyVariant" type="button">複製新 JSON</button><span id="variantCopyStatus" role="status"></span></section><section><h3>新題目預覽</h3><div id="variantPreview"></div></section></div></dialog>
-<script type="module" src="api-settings.js?v=20261104-ai-reconnect"></script>
+<script type="module" src="api-settings.js?v=20261104-ai-monitor"></script>
 <script src="preview-clipboard.js?v=20261104-anytype-copy"></script>
 <script>
 const $=id=>document.getElementById(id);let imageData=null;

@@ -1125,6 +1125,8 @@ h1 {
 .ai-connection-button img { width: 32px; height: 32px; object-fit: contain; background: #fff; border-radius: 4px; }
 .ai-connection-button[data-state="connected"] { color: #166534; border-color: #86cda1; }
 .ai-connection-button[data-state="error"], .ai-connection-button[data-state="offline"] { color: #b91c1c; border-color: #f0a5a5; }
+.ai-monitor-button { border: 1px solid #94a3b8; border-radius: 8px; padding: 8px 10px; background: #fff; color: #334155; font-size: 13px; }
+.ai-monitor-button[aria-pressed="true"] { background: #dcfce7; border-color: #16a34a; color: #166534; }
 #closeMathJsonDialog { padding: 8px 16px; border: 1px solid #111; border-radius: 6px; background: #ffad42; color: #111; cursor: pointer; }
 #mathJsonFrame { flex: 1; width: 100%; min-height: 0; border: 1px solid #ddd; border-radius: 8px; background: white; }
 .math-json-dialog-note { margin: 0; font-size: 12px; color: #6b7280; }

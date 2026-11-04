@@ -1,5 +1,5 @@
 import { verifyAndSeal, openSettings } from './vault.js';
-import { convertQuestion, testConnection, usesLocalBackend, solveQuestion, generateVariant } from './api-client.js?v=20261104-variant';
+import { convertQuestion, testConnection, probeConnection, usesLocalBackend, solveQuestion, generateVariant } from './api-client.js?v=20261104-monitor';
 const $ = id => document.getElementById(id);
 const presets = { openai: 'gpt-4.1', gemini: 'gemini-2.5-flash', deepseek: 'deepseek-flash', qwen: 'qwen3-vl-plus' };
 const prefix = 'handout-api-vault-v1:';
@@ -9,6 +9,8 @@ let active = null;
 let revision = 0;
 let connectionRequest = 0, connectionState = 'locked';
 let reconnecting = null;
+const monitorInterval = 60000;
+let monitorEnabled = false, monitorTimer = null, monitorEpoch = 0, monitorRunning = false, monitorFailures = 0;
 const parentOrigins = new Set([location.origin, 'http://127.0.0.1:5173', 'http://localhost:5173', 'http://127.0.0.1:5184', 'http://localhost:5184']);
 let parentOrigin;
 try { parentOrigin = new URL(document.referrer || location.href).origin; } catch {}
@@ -16,17 +18,50 @@ function connectionChanged(state) {
   connectionState = navigator.onLine === false ? 'offline' : state;
   if (parent !== window && parentOrigins.has(parentOrigin)) parent.postMessage({ type: 'handout-ai-connection', state: connectionState }, parentOrigin);
 }
-async function withConnectionStatus(action) {
+async function withConnectionStatus(action, successState = 'connected') {
   const current = revision, request = ++connectionRequest;
   connectionChanged('checking');
   try {
     const result = await action();
-    if (current === revision && request === connectionRequest) connectionChanged('connected');
+    if (current === revision && request === connectionRequest) connectionChanged(successState);
     return result;
   } catch (error) {
     if (current === revision && request === connectionRequest) connectionChanged('error');
     throw error;
   }
+}
+function publishMonitor() {
+  $('unlockApiSettings').textContent = monitorEnabled ? '解鎖並輕量驗證（省 token）' : '解鎖並連線（少量計費）';
+  if (parent !== window && parentOrigins.has(parentOrigin)) parent.postMessage({ type: 'handout-ai-monitor', enabled: monitorEnabled, waitingForUnlock: monitorEnabled && !active }, parentOrigin);
+}
+function stopMonitor() {
+  monitorEnabled = false; monitorEpoch++; clearTimeout(monitorTimer); monitorTimer = null; monitorFailures = 0; publishMonitor();
+}
+function scheduleMonitor(delay = monitorInterval) {
+  clearTimeout(monitorTimer);
+  if (monitorEnabled && active) monitorTimer = setTimeout(runMonitor, delay);
+}
+async function runMonitor() {
+  clearTimeout(monitorTimer); monitorTimer = null;
+  if (!monitorEnabled || !active) return;
+  if (monitorRunning || connectionState === 'checking' || navigator.onLine === false) { scheduleMonitor(); return; }
+  const epoch = monitorEpoch;
+  monitorRunning = true;
+  try {
+    await withConnectionStatus(() => probeConnection({ ...active }), 'verified');
+    if (epoch === monitorEpoch) { monitorFailures = 0; report('持續輕量檢查成功：僅查詢模型資訊，不產生對話 token。'); }
+  } catch (error) {
+    if (epoch === monitorEpoch) { monitorFailures++; report(error.message); }
+  } finally {
+    monitorRunning = false;
+    if (epoch === monitorEpoch) scheduleMonitor(Math.min(monitorInterval * 2 ** monitorFailures, 600000));
+  }
+}
+async function toggleMonitor() {
+  if (monitorEnabled) { stopMonitor(); return; }
+  monitorEnabled = true; monitorEpoch++; monitorFailures = 0; publishMonitor();
+  if (!active) { openConnectionSettings(); return; }
+  await runMonitor();
 }
 function openConnectionSettings() {
   if (parent !== window && parentOrigins.has(parentOrigin)) parent.postMessage({ type: 'handout-ai-open-settings' }, parentOrigin);
@@ -53,14 +88,16 @@ async function reconnectAi() {
 }
 window.addEventListener('message', async event => {
   if (event.source !== parent || parent === window || !parentOrigins.has(event.origin)) return;
-  if (!['handout-ai-connection-query', 'handout-ai-connect', 'handout-ai-focus-settings'].includes(event.data?.type)) return;
+  if (!['handout-ai-connection-query', 'handout-ai-connect', 'handout-ai-focus-settings', 'handout-ai-monitor-toggle'].includes(event.data?.type)) return;
   parentOrigin = event.origin;
-  if (event.data.type === 'handout-ai-connection-query') connectionChanged(connectionState);
+  if (event.data.type === 'handout-ai-connection-query') { connectionChanged(connectionState); publishMonitor(); }
+  else if (event.data.type === 'handout-ai-monitor-toggle') await toggleMonitor();
   else if (event.data.type === 'handout-ai-focus-settings') focusConnectionSettings();
+  else if (monitorEnabled) { if (active) await runMonitor(); else openConnectionSettings(); }
   else await reconnectAi();
 });
 window.addEventListener('offline', () => connectionChanged('offline'));
-window.addEventListener('online', () => connectionChanged(active ? 'ready' : 'locked'));
+window.addEventListener('online', () => { connectionChanged(active ? 'ready' : 'locked'); scheduleMonitor(0); });
 const report = message => $('apiStatus').textContent = message;
 const recordName = () => prefix + $('apiProvider').value;
 function settingsFromForm() {
@@ -69,7 +106,7 @@ function settingsFromForm() {
   if (!apiKey) throw Error('請輸入 API Key，或輸入解鎖密碼後解鎖。');
   return { provider, apiKey, model: $('apiModel').value.trim() || presets[provider], baseURL: provider === 'qwen' ? $('apiBaseURL').value.trim() : '' };
 }
-function clearSecrets() { revision++; active = null; $('apiKey').value = ''; $('vaultPassword').value = ''; connectionChanged('locked'); }
+function clearSecrets() { stopMonitor(); revision++; active = null; $('apiKey').value = ''; $('vaultPassword').value = ''; connectionChanged('locked'); }
 window.getMathApiSettings = () => {
   if (!active) throw Error('請先貼上金鑰並測試加密儲存，或解鎖已儲存設定。');
   return { ...active };
@@ -95,7 +132,7 @@ $('unlockApiSettings').addEventListener('click', async () => {
     connectionChanged('ready');
     if (provider === 'qwen') $('apiBaseURL').value = settings.baseURL;
     $('apiKey').value = ''; $('vaultPassword').value = '';
-    await reconnectAi();
+    if (monitorEnabled) { publishMonitor(); await runMonitor(); } else await reconnectAi();
   } catch (error) { if(current===revision){active = null; connectionChanged('locked'); report(error.message);} } finally { $('vaultPassword').value = ''; button.disabled = false; }
 });
 $('lockApiSettings').addEventListener('click', () => { clearSecrets(); report('已鎖定並清除本分頁中的金鑰。'); });
@@ -120,6 +157,7 @@ $('testApiSettings').addEventListener('click', async () => {
     connectionChanged('connected');
     $('apiKey').placeholder = '已加密；如需更換請重新貼上金鑰';
     report('連線測試成功，已加密儲存並啟用。金鑰不再顯示；如需更換請重新貼上並測試。');
+    if (monitorEnabled) { publishMonitor(); scheduleMonitor(); }
   } catch (error) { if(current===undefined||current===revision){connectionChanged('error'); report(error.message + '（未覆蓋原有加密設定）');} }
   finally { button.disabled = false; }
 });

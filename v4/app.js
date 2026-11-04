@@ -1101,23 +1101,28 @@ copyJsonPromptButton.addEventListener("click", () => {
   const frame = document.querySelector("#mathJsonFrame");
   if (!frame.getAttribute("src")) {
     const local = ["127.0.0.1", "localhost"].includes(location.hostname);
-    frame.src = local ? "http://127.0.0.1:5185/?v=20261104-ai-reconnect" : "../zj454/public/index.html?v=20261104-ai-reconnect";
+    frame.src = local ? "http://127.0.0.1:5185/?v=20261104-ai-monitor" : "../zj454/public/index.html?v=20261104-ai-monitor";
   }
   mathJsonDialog.showModal();
 });
 document.querySelector("#closeMathJsonDialog").addEventListener("click", () => mathJsonDialog.close());
-const aiConnectionLabels = { locked: 'AI：未設定或未解鎖', ready: 'AI：已解鎖，待驗證', checking: 'AI：連線中…', connected: 'AI：最近連線成功', error: 'AI：請求失敗', offline: 'AI：網路離線' };
+const aiConnectionLabels = { locked: 'AI：未設定或未解鎖', ready: 'AI：已解鎖，待驗證', checking: 'AI：連線中…', connected: 'AI：最近連線成功', verified: 'AI：輕量驗證成功', error: 'AI：請求失敗', offline: 'AI：網路離線' };
 function updateAiConnection(state) {
   if (!Object.hasOwn(aiConnectionLabels, state)) return;
   const effective = navigator.onLine === false ? 'offline' : state;
   document.querySelector('#aiConnectionButton').dataset.state = effective;
   document.querySelector('#aiConnectionText').textContent = aiConnectionLabels[effective];
-  document.querySelector('#aiConnectionIcon').src = effective === 'connected' ? 'assets/connection.gif' : 'assets/no-connection.png';
+  document.querySelector('#aiConnectionIcon').src = ['connected', 'verified'].includes(effective) ? 'assets/connection.gif' : 'assets/no-connection.png';
 }
 window.addEventListener('message', event => {
   const frame = document.querySelector('#mathJsonFrame');
   if (!frame.getAttribute('src') || event.source !== frame.contentWindow || event.origin !== new URL(frame.src).origin) return;
   if (event.data?.type === 'handout-ai-connection') updateAiConnection(event.data.state);
+  else if (event.data?.type === 'handout-ai-monitor' && typeof event.data.enabled === 'boolean') {
+    const button = document.querySelector('#aiMonitorButton');
+    button.setAttribute('aria-pressed', String(event.data.enabled));
+    button.textContent = !event.data.enabled ? '連續檢查：關（省 token）' : event.data.waitingForUnlock ? '停止連續檢查（待解鎖）' : '停止連續檢查（省 token）';
+  }
   else if (event.data?.type === 'handout-ai-open-settings') {
     if (!mathJsonDialog.open) mathJsonDialog.showModal();
     frame.contentWindow.postMessage({ type: 'handout-ai-focus-settings' }, event.origin);
@@ -1132,6 +1137,12 @@ document.querySelector('#aiConnectionButton').addEventListener('click', async ()
   } catch {
     updateAiConnection('error'); copyJsonPromptButton.click();
   } finally { button.disabled = false; }
+});
+document.querySelector('#aiMonitorButton').addEventListener('click', async () => {
+  try {
+    const frame = await ensureAnswerModule();
+    frame.contentWindow.postMessage({ type: 'handout-ai-monitor-toggle' }, new URL(frame.src).origin);
+  } catch { updateAiConnection('error'); }
 });
 window.addEventListener('offline', () => updateAiConnection('offline'));
 window.addEventListener('online', () => {
@@ -1172,7 +1183,7 @@ async function ensureAnswerModule(){
     frame.addEventListener('load',()=>{clearTimeout(timeout);frame.dataset.ready='true';resolve();},{once:true});
     if(!frame.getAttribute('src')){
       const local=['127.0.0.1','localhost'].includes(location.hostname);
-      frame.src=local?'http://127.0.0.1:5185/?v=20261104-ai-reconnect':'../zj454/public/index.html?v=20261104-ai-reconnect';
+      frame.src=local?'http://127.0.0.1:5185/?v=20261104-ai-monitor':'../zj454/public/index.html?v=20261104-ai-monitor';
     }
   });return frame;
 }
